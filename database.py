@@ -816,3 +816,71 @@ def reset_tariffs_to_default():
     
     conn.commit()
     conn.close()
+
+def assign_student_to_teacher(teacher_id, student_id):
+    """O'quvchini o'qituvchiga biriktirish - TO'G'RI VERSIYA"""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    try:
+        # 1. O'ziga o'zini biriktirishni oldini olish
+        if teacher_id == student_id:
+            print(f"❌ O'qituvchi {teacher_id} o'ziga o'zini biriktira olmaydi")
+            return False
+        
+        # 2. Avval biriktirilganligini tekshirish
+        cursor.execute('SELECT 1 FROM student_teacher WHERE teacher_id = ? AND student_id = ?', 
+                      (teacher_id, student_id))
+        if cursor.fetchone():
+            print(f"❌ O'quvchi {student_id} allaqachon {teacher_id} ga biriktirilgan")
+            return False
+        
+        # 3. O'qituvchi jadvalida mavjudligini tekshirish
+        cursor.execute('SELECT 1 FROM teachers WHERE teacher_id = ?', (teacher_id,))
+        if not cursor.fetchone():
+            # Agar teachers jadvalida yo'q bo'lsa, qo'shamiz
+            cursor.execute('INSERT OR IGNORE INTO teachers (teacher_id) VALUES (?)', (teacher_id,))
+            print(f"✅ O'qituvchi {teacher_id} teachers jadvaliga qo'shildi")
+        
+        # 4. TO'G'RI TARTIBDA INSERT QILISH: (student_id, teacher_id)
+        cursor.execute('INSERT INTO student_teacher (student_id, teacher_id) VALUES (?, ?)', 
+                      (student_id, teacher_id))
+        
+        conn.commit()
+        print(f"✅ O'quvchi {student_id} o'qituvchi {teacher_id} ga muvaffaqiyatli biriktirildi")
+        return True
+        
+    except Exception as e:
+        print(f"❌ assign_student_to_teacher xatosi: {e}")
+        return False
+    finally:
+        conn.close()
+
+def remove_student_from_teacher(teacher_id, student_id):
+    """O'quvchini o'qituvchidan olib tashlash"""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    cursor.execute('DELETE FROM student_teacher WHERE teacher_id = ? AND student_id = ?', (teacher_id, student_id))
+    conn.commit()
+    conn.close()
+
+def get_all_users_for_teacher():
+    """O'qituvchilar uchun barcha foydalanuvchilar ro'yxati"""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT user_id, full_name, username FROM users ORDER BY full_name')
+    users = cursor.fetchall()
+    conn.close()
+    return users
+
+def search_user_by_username(username):
+    """Username bo'yicha foydalanuvchi qidirish"""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT user_id, full_name, username FROM users WHERE username LIKE ? ORDER BY full_name', (f'%{username}%',))
+    users = cursor.fetchall()
+    conn.close()
+    return users

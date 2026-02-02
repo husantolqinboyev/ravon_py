@@ -706,10 +706,11 @@ async def random_text(message: Message):
     "📊 Umumiy statistika", "💳 To'lov so'rovlari", "💰 Tariflar boshqaruvi",
     "🧹 Tariflarni tozalash", "🗑️ Fayllarni tozalash", "👨‍🏫 O'qituvchi tayinlash", 
     "📢 Xabar yuborish (Ad)", "👤 Foydalanuvchilar",
-    "👨‍🎓 Mening o'quvchilarim", "📝 Material qo'shish", "🤖 AI yordam",
-    "📚 Materiallarim", "📊 O'quvchilar statistikasi", "📝 So'z qo'shish",
-    "📄 Matn qo'shish", "🤖 AI so'z yaratish", "🤖 AI matn yaratish",
-    "📝 So'z yaratish (AI)", "📄 Matn yaratish (AI)", "⬅️ O'qituvchi menyu"
+    "👨‍🎓 Mening o'quvchilarim", "👥 O'quvchi biriktirish", "📝 Material qo'shish", "🤖 AI yordam",
+    "📚 Materiallarim", "📊 O'quvchilar statistikasi", "📤 Material yuborish", "📝 So'z qo'shish",
+    "📄 Matn qo'shish", "🤖 AI so'z yaratish", "🤖 AI matn yaratish", "📝 So'z yuborish",
+    "📄 Matn yuborish", "🤖 AI so'z yuborish", "🤖 AI matn yuborish", "📝 So'z yaratish (AI)", 
+    "📄 Matn yaratish (AI)", "⬅️ O'qituvchi menyu"
 ]))
 async def handle_user_input(message: Message):
     user_id = message.from_user.id
