@@ -5,7 +5,7 @@ aiogram==3.4.1
 aiohttp==3.9.1
 
 # Database
-sqlite3
+# sqlite3 is built-in
 
 # AI requests
 requests==2.31.0

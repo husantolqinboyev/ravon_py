@@ -525,11 +525,8 @@ def add_teacher(user_id, admin_id):
     conn.close()
 
 def assign_student(student_id, teacher_id):
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute('INSERT OR IGNORE INTO student_teacher (student_id, teacher_id) VALUES (?, ?)', (student_id, teacher_id))
-    conn.commit()
-    conn.close()
+    """Eski funksiya nomini saqlab qolish (moslik uchun), lekin yangi mantiqni ishlatish"""
+    return assign_student_to_teacher(teacher_id, student_id)
 
 def get_teacher_students(teacher_id):
     conn = sqlite3.connect(DB_NAME)
@@ -856,6 +853,10 @@ def assign_student_to_teacher(teacher_id, student_id):
     finally:
         conn.close()
 
+def assign_student(student_id, teacher_id):
+    """Eski funksiya nomini saqlab qolish (moslik uchun), lekin yangi mantiqni ishlatish"""
+    return assign_student_to_teacher(teacher_id, student_id)
+
 def remove_student_from_teacher(teacher_id, student_id):
     """O'quvchini o'qituvchidan olib tashlash"""
     conn = sqlite3.connect(DB_NAME)
@@ -866,14 +867,42 @@ def remove_student_from_teacher(teacher_id, student_id):
     conn.close()
 
 def get_all_users_for_teacher():
-    """O'qituvchilar uchun barcha foydalanuvchilar ro'yxati"""
+    """O'qituvchilar uchun barcha foydalanuvchilar ro'yxati (NULL ismlarni ham to'g'ri ko'rsatadi)"""
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     
-    cursor.execute('SELECT user_id, full_name, username FROM users ORDER BY full_name')
+    # COALESCE orqali NULL ismlarni 'Noma'lum' deb ko'rsatamiz
+    cursor.execute('''
+        SELECT user_id, COALESCE(full_name, 'Foydalanuvchi ' || user_id), username 
+        FROM users 
+        ORDER BY full_name ASC
+    ''')
     users = cursor.fetchall()
     conn.close()
     return users
+
+def get_student_stats(teacher_id):
+    """O'qituvchining o'quvchilari uchun statistika"""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    # O'quvchilar va ularning oxirgi natijalarini olish
+    cursor.execute('''
+        SELECT u.user_id, u.full_name, 
+               COUNT(t.test_id) as total_tests,
+               AVG(t.pronunciation_score) as avg_score,
+               MAX(t.created_at) as last_test
+        FROM users u
+        JOIN student_teacher st ON u.user_id = st.student_id
+        LEFT JOIN tests t ON u.user_id = t.user_id
+        WHERE st.teacher_id = ?
+        GROUP BY u.user_id
+        ORDER BY last_test DESC
+    ''', (teacher_id,))
+    
+    stats = cursor.fetchall()
+    conn.close()
+    return stats
 
 def search_user_by_username(username):
     """Username bo'yicha foydalanuvchi qidirish"""

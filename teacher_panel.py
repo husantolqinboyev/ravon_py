@@ -57,7 +57,7 @@ async def assign_student_menu(message: Message):
     # Soddalashtirilgan variant - faqat ro'yxatdan tanlash
     await show_users_list(message)
 
-@teacher_router.message(F.text.contains("Ro'yxat") | F.text == "1" | F.text.contains("ro'yxat"))
+@teacher_router.message((F.text.contains("Ro'yxat")) | (F.text == "1") | (F.text.contains("ro'yxat")))
 async def show_users_list(message: Message):
     print(f"📋 show_users_list called by {message.from_user.id} with text: '{message.text}'")
     
@@ -172,55 +172,46 @@ async def assign_student_callback(callback: types.CallbackQuery):
         print(f"❌ assign_student_callback xatosi: {e}")
         await callback.answer("❌ Xatolik yuz berdi!", show_alert=True)
 
-@teacher_router.callback_query(F.data == "show_more_users")
-async def show_more_users_callback(callback: types.CallbackQuery):
+@teacher_router.callback_query(F.data == "back_teacher")
+async def back_teacher_callback(callback: types.CallbackQuery):
     if not db.is_teacher(callback.from_user.id):
-        await callback.answer("Siz o'qituvchi emassiz!", show_alert=True)
+        await callback.answer("❌ Siz o'qituvchi emassiz!", show_alert=True)
         return
     
-    users = db.get_all_users_for_teacher()
-    if not users:
-        await callback.answer("Foydalanuvchilar yo'q!", show_alert=True)
-        return
-    
-    # Ikkinchi 10 ta foydalanuvchi
-    keyboard = []
-    for user in users[10:20]:  # Ikkinchi 10 ta
-        user_text = f"{user[1]} (@{user[2] or 'username yo\'q'})"
-        keyboard.append([InlineKeyboardButton(text=user_text, callback_data=f"assign_user_{user[0]}")])
-    
-    keyboard.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_assign_menu")])
-    
-    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
-    
-    await callback.message.edit_text(
-        f"📋 **Foydalanuvchilar ro'yxati (11-20)**\n\n"
-        f"Biriktirmoqchi bo'lgan o'quvchini tanlang:",
-        reply_markup=markup,
-        parse_mode="Markdown"
+    help_text = (
+        "👨‍🏫 **O'qituvchi Paneli**\n\n"
+        "O'quvchilaringizning progressini kuzatish va materiallar qo'shishingiz mumkin.\n\n"
+        "📚 **Materiallar:** So'z va matn qo'shishingiz mumkin\n"
+        "👥 **O'quvchilar:**  O'quvchilar ro'yxati va statistikasi\n"
+        "🤖 **AI yordam:** AI orqali materiallar yaratish"
     )
+    
+    # State ni tozalash
+    if callback.from_user.id in teacher_states:
+        del teacher_states[callback.from_user.id]
+        
+    await callback.message.edit_text(help_text, reply_markup=get_teacher_menu_inline(), parse_mode="Markdown")
     await callback.answer()
 
-@teacher_router.callback_query(F.data == "back_to_assign_menu")
-async def back_to_assign_menu_callback(callback: types.CallbackQuery):
-    if not db.is_teacher(callback.from_user.id):
-        await callback.answer("Siz o'qituvchi emassiz!", show_alert=True)
-        return
-    
-    markup = ReplyKeyboardMarkup(keyboard=[
-        [KeyboardButton(text="📋 Ro'yxatdan tanlash")],
-        [KeyboardButton(text="🔍 Username bilan qidirish")],
-        [KeyboardButton(text="🆔 User ID bilan biriktirish")],
-        [KeyboardButton(text="⬅️ O'qituvchi menyu")]
-    ], resize_keyboard=True)
-    
-    await callback.message.edit_text(
-        "👥 **O'quvchi biriktirish**\n\n"
-        "Qanday usulda o'quvchini biriktirmoqchisiz?",
-        reply_markup=markup,
-        parse_mode="Markdown"
-    )
+def get_teacher_menu_inline():
+    buttons = [
+        [InlineKeyboardButton(text="👨‍🎓 O'quvchilarim", callback_data="view_students_list")],
+        [InlineKeyboardButton(text="👥 Biriktirish", callback_data="assign_menu"), 
+         InlineKeyboardButton(text="📝 Material qo'shish", callback_data="add_material_menu")],
+        [InlineKeyboardButton(text="🤖 AI yordam", callback_data="ai_help_menu"),
+         InlineKeyboardButton(text="📊 Statistika", callback_data="view_stats")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+@teacher_router.callback_query(F.data == "assign_menu")
+async def assign_menu_callback(callback: types.CallbackQuery):
+    await show_users_list(callback.message)
     await callback.answer()
+
+@teacher_router.message(F.text == "⬅️ Asosiy menyu")
+async def back_to_main(message: Message):
+    from main import get_main_menu
+    await message.answer("Asosiy menyuga qaytdingiz.", reply_markup=get_main_menu(message.from_user.id))
 
 @teacher_router.message(F.text == "📤 Material yuborish")
 async def send_material_to_students(message: Message):
@@ -285,17 +276,18 @@ async def view_materials(message: Message):
         
         if words:
             text += "📝 **So'zlar:**\n"
-            for i, word in enumerate(words[:10], 1):
-                text += f"{i}. {word}\n"
-            if len(words) > 10:
-                text += f"... va yana {len(words) - 10} ta so'z\n"
+            for i, word in enumerate(words, 1):
+                text += f"{i}. {word[1]}\n"
+            if len(words) >= 50:
+                text += "*(Faqat oxirgi 50 ta so'z ko'rsatilmoqda)*\n"
         
         if sentences:
             text += "\n📄 **Matnlar:**\n"
-            for i, sent in enumerate(sentences[:5], 1):
-                text += f"{i}. {sent[:50]}...\n"
-            if len(sentences) > 5:
-                text += f"... va yana {len(sentences) - 5} ta matn\n"
+            for i, sent in enumerate(sentences, 1):
+                content = sent[1][:50] + "..." if len(sent[1]) > 50 else sent[1]
+                text += f"{i}. {content}\n"
+            if len(sentences) >= 20:
+                text += "*(Faqat oxirgi 20 ta matn ko'rsatilmoqda)*\n"
         
         await message.answer(text)
 
@@ -459,14 +451,24 @@ async def ai_generate_sentence(message: Message):
 @teacher_router.message(F.text == "📝 So'z yaratish (AI)")
 async def ai_word_help(message: Message):
     if db.is_teacher(message.from_user.id):
-        await message.answer("🤖 AI so'z yordami:\n\nMavzuni kiriting (masalan: 'technology', 'nature', 'daily life'):")
-        # Bu yerda state mexanizmi qo'shilishi kerak
+        teacher_states[message.from_user.id] = "ai_word_topic"
+        await message.answer(
+            "🤖 **AI so'z yordami**\n\n"
+            "Mavzuni kiriting (masalan: 'technology', 'nature', 'daily life'):\n\n"
+            "AI ushbu mavzuga oid qiziqarli so'z topib beradi.",
+            parse_mode="Markdown"
+        )
 
 @teacher_router.message(F.text == "📄 Matn yaratish (AI)")
 async def ai_sentence_help(message: Message):
     if db.is_teacher(message.from_user.id):
-        await message.answer("🤖 AI matn yordami:\n\nMavzu va darajani kiriting (masalan: 'business, intermediate'):")
-        # Bu yerda state mexanizmi qo'shilishi kerak
+        teacher_states[message.from_user.id] = "ai_sentence_topic"
+        await message.answer(
+            "🤖 **AI matn yordami**\n\n"
+            "Mavzu va darajani kiriting (masalan: 'business, intermediate' yoki 'travel, beginner'):\n\n"
+            "AI ushbu mavzuga oid talaffuz uchun matn yaratib beradi.",
+            parse_mode="Markdown"
+        )
 
 @teacher_router.message(F.text.startswith("/add_word "))
 async def add_word(message: Message):
@@ -497,6 +499,13 @@ async def handle_teacher_input(message: Message):
     
     # State ni tekshirish
     state = teacher_states.get(user_id)
+    
+    # Orqaga qaytishni tekshirish
+    if text in ["⬅️ O'qituvchi menyu", "⬅️ Orqaga", "bekor qilish", "cancel"]:
+        if user_id in teacher_states:
+            del teacher_states[user_id]
+        await message.answer("Amal bekor qilindi.", reply_markup=get_teacher_menu())
+        return
     
     # ===== MATERIAL QO'SHISH =====
     if state == "adding_word":
@@ -536,7 +545,7 @@ async def handle_teacher_input(message: Message):
         else:
             await message.answer(
                 "❌ **Xatolik!**\n\n"
-                "Faqat bitta so'z yozing. Qaytadan urinib ko'ring:",
+                "Faqat bitta so'z yozing. Qaytadan urinib ko'ring yoki 'cancel' deb yozing:",
                 parse_mode="Markdown"
             )
     
@@ -577,7 +586,7 @@ async def handle_teacher_input(message: Message):
         else:
             await message.answer(
                 "❌ **Xatolik!**\n\n"
-                "Matnda kamida 3 ta so'z bo'lishi kerak. Qaytadan urinib ko'ring:",
+                "Matnda kamida 3 ta so'z bo'lishi kerak. Qaytadan urinib ko'ring yoki 'cancel' deb yozing:",
                 parse_mode="Markdown"
             )
             # ===== MATERIAL YUBORISH =====
@@ -750,6 +759,57 @@ async def handle_teacher_input(message: Message):
         except ValueError:
             await message.answer("❌ Iltimos, to'g'ri User ID (faqat raqam) kiriting:")
     
+    # ===== AI YORDAM STATELARI =====
+    elif state == "ai_word_topic":
+        print(f"DEBUG: Processing ai_word_topic for {user_id}")
+        
+        topic = text.strip()
+        await message.answer(f"🤖 **'{topic}'** mavzusida so'z qidirilmoqda... ⏳", parse_mode="Markdown")
+        
+        prompt = f"Generate an interesting English word related to '{topic}' that is excellent for pronunciation practice. Choose a word that is not too common but still useful. Return only the word, no explanation."
+        
+        ai_result = ai.generate_content(prompt)
+        if ai_result:
+            word = ai_result.strip().lower()
+            
+            # Bazaga qo'shish
+            db.add_material(user_id, word, "word")
+            
+            await message.answer(
+                f"🤖 AI topdi: **{word}** ✅\n\n"
+                f"So'z materiallaringizga qo'shildi!",
+                parse_mode="Markdown"
+            )
+        else:
+            await message.answer("❌ AI bilan xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
+            
+        del teacher_states[user_id]
+        
+    elif state == "ai_sentence_topic":
+        print(f"DEBUG: Processing ai_sentence_topic for {user_id}")
+        
+        topic = text.strip()
+        await message.answer(f"🤖 **'{topic}'** bo'yicha matn yaratilmoqda... ⏳", parse_mode="Markdown")
+        
+        prompt = f"Create 3-4 unique, interesting English sentences (total 25-35 words) about '{topic}' that are perfect for pronunciation practice. Make them natural and conversational. Connect them into one coherent text. Return only the sentences, no explanation."
+        
+        ai_result = ai.generate_content(prompt)
+        if ai_result:
+            sentence = ai_result.strip()
+            
+            # Bazaga qo'shish
+            db.add_material(user_id, sentence, "sentence")
+            
+            await message.answer(
+                f"🤖 AI yaratdi:\n\n**{sentence}** ✅\n\n"
+                f"Matn materiallaringizga qo'shildi!",
+                parse_mode="Markdown"
+            )
+        else:
+            await message.answer("❌ AI bilan xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
+            
+        del teacher_states[user_id]
+    
     # ===== AGAR STATE BO'LMASA =====
     else:
         print(f"DEBUG: No state for user {user_id}, ignoring input")
@@ -815,5 +875,32 @@ async def debug_assign(message: Message):
 
 @teacher_router.message(F.text == "📊 O'quvchilar statistikasi")
 async def student_stats(message: Message):
-    if db.is_teacher(message.from_user.id):
-        await message.answer("O'quvchilarning oxirgi test natijalari yuklanmoqda...")
+    if not db.is_teacher(message.from_user.id):
+        await message.answer("❌ Siz o'qituvchi emassiz!")
+        return
+        
+    await message.answer("📊 **O'quvchilar statistikasi yuklanmoqda...** ⏳", parse_mode="Markdown")
+    
+    try:
+        stats = db.get_student_stats(message.from_user.id)
+        
+        if not stats:
+            await message.answer("❌ Sizda hali o'quvchilar yo'q.")
+            return
+            
+        text = "📊 **O'quvchilar statistikasi:**\n\n"
+        for s in stats:
+            user_id, full_name, total_tests, avg_score, last_test = s
+            name = full_name or f"User {user_id}"
+            avg = round(avg_score, 1) if avg_score else 0
+            
+            text += f"👤 **{name}**\n"
+            text += f"├ Testlar: {total_tests} ta\n"
+            text += f"├ O'rtacha ball: {avg}%\n"
+            text += f"└ Oxirgi test: {last_test or 'yo\'q'}\n\n"
+            
+        await message.answer(text, parse_mode="Markdown")
+        
+    except Exception as e:
+        print(f"❌ student_stats xatosi: {e}")
+        await message.answer("❌ Statistikani yuklashda xatolik yuz berdi.")
