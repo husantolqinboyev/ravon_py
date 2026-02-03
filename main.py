@@ -3,6 +3,7 @@ import logging
 import os
 import sqlite3
 import datetime
+import aiohttp  # For ping requests
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery
@@ -23,6 +24,30 @@ logging.basicConfig(level=logging.INFO)
 # Bot va Dispatcher
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+
+# Render server auto-ping task
+async def keep_alive_ping():
+    """Har 10 daqiqada serverga ping yuborish (Render uchun)"""
+    ping_url = os.getenv('PING_URL')
+    if not ping_url:
+        logging.warning("PING_URL .env faylida topilmadi! Auto-ping o'chirildi.")
+        return
+    
+    logging.info(f"Auto-ping ishga tushdi: {ping_url}")
+    
+    while True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(ping_url, timeout=aiohttp.ClientTimeout(total=30)) as response:
+                    if response.status == 200:
+                        logging.info(f"✅ Ping muvaffaqiyatli: {response.status}")
+                    else:
+                        logging.warning(f"⚠️ Ping javobi: {response.status}")
+        except Exception as e:
+            logging.error(f"❌ Ping xatosi: {e}")
+        
+        # 10 daqiqa kutish (600 soniya)
+        await asyncio.sleep(600)
 
 # Admin panelga bot instance ni o'rnatish
 from admin_panel import set_bot_instance
@@ -1147,6 +1172,10 @@ async def process_pronunciation_test(message: Message, user_id: int, original_te
 async def main():
     db.init_db()
     print("Bot modulli tizimda ishga tushmoqda...")
+    
+    # Render server uchun auto-ping taskni ishga tushirish
+    asyncio.create_task(keep_alive_ping())
+    
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

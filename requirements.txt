@@ -21,7 +21,7 @@ gTTS==2.5.1
 pydub==0.25.1
 
 # Image processing (for PDF reports)
-Pillow==10.2.0
+Pillow==11.0.0
 
 # Date and time handling
 python-dateutil==2.8.2
