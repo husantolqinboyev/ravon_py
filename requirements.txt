@@ -54,4 +54,4 @@ httpx==0.26.0
 pathlib
 
 # Type hints
-typing-extensions==4.9.0
+typing-extensions==4.12.2
