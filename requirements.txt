@@ -1,5 +1,5 @@
-# AIogram - Telegram bot framework
-aiogram==3.4.1
+# AIogram - Telegram bot framework (server compatibility)
+aiogram==2.25.2
 
 # Async HTTP requests
 aiohttp==3.9.1
