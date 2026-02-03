@@ -12,6 +12,7 @@ requests==2.31.0
 
 # PDF generation
 reportlab==4.0.8
+qrcode==7.4.2
 
 # Text-to-Speech
 gTTS==2.5.1
