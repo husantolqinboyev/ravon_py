@@ -155,7 +155,6 @@ payment_check_*
 *.sqlite3
 
 # Config files with sensitive data
-config.py
 .env
 .env.local
 .env.production

@@ -3,7 +3,7 @@ services:
     name: ravon-bot
     env: python
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: cd /opt/render/project && python -m src.main
+    startCommand: python main.py
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
@@ -18,7 +18,11 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: DB_NAME
-        value: "/data/ravon_ai.db"
+        value: "ravon_ai.db"
+      - key: REQUIRED_CHANNEL
+        value: "@englishwithSanatbek"
+      - key: REQUIRED_CHANNEL_ID
+        value: "-1003014655042"
     healthCheckPath: /health
     autoDeploy: true
     plan: free

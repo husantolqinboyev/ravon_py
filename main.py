@@ -8,6 +8,18 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery
 
+# Debug logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Debug info
+logger.info(f"Current directory: {os.getcwd()}")
+logger.info(f"Config path exists: {os.path.exists('config.py')}")
+logger.info(f"Files in current directory: {os.listdir('.')}")
+
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from config import BOT_TOKEN
 import database as db
 import ai_handler as ai
@@ -17,6 +29,10 @@ from admin_panel import admin_router
 from teacher_panel import teacher_router, get_teacher_menu
 from aiogram.types import FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton
 from config import REQUIRED_CHANNEL
+
+# Debug config loading
+logger.info(f"BOT_TOKEN loaded: {'Yes' if BOT_TOKEN else 'No'}")
+logger.info(f"Bot token length: {len(BOT_TOKEN) if BOT_TOKEN else 0}")
 
 # Logging
 logging.basicConfig(level=logging.INFO)
