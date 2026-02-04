@@ -870,8 +870,6 @@ async def handle_text_to_audio(message: Message):
                 f"Limit bittaga kamaydi. Qolgan limit: {updated_user[4]}\n"
                 f"📊 Kunlik limit: {limit_check['daily_limit']} ta so'rov"
             )
-    else:
-        await message.answer("Xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.")
 
 @dp.message(F.voice)
 async def handle_voice(message: Message):
