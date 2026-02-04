@@ -2,7 +2,7 @@ services:
   - type: web
     name: ravon-bot
     env: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python main.py
     envVars:
       - key: PYTHON_VERSION
@@ -13,3 +13,16 @@ services:
         sync: false
       - key: PING_URL
         sync: false
+      - key: TEACHER_IDS
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: DB_NAME
+        value: "/data/ravon_ai.db"
+    healthCheckPath: /health
+    autoDeploy: true
+    plan: free
+    disk:
+      name: ravon-data
+      mountPath: /data
+      sizeGB: 1

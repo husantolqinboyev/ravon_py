@@ -21,9 +21,23 @@ from config import REQUIRED_CHANNEL
 # Logging
 logging.basicConfig(level=logging.INFO)
 
+from fastapi import FastAPI
+import uvicorn
+
 # Bot va Dispatcher
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+
+# FastAPI (Render health check uchun)
+app = FastAPI()
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Ravon AI Bot is running"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
 
 # Render server auto-ping task
 async def keep_alive_ping():
@@ -1176,7 +1190,16 @@ async def main():
     # Render server uchun auto-ping taskni ishga tushirish
     asyncio.create_task(keep_alive_ping())
     
-    await dp.start_polling(bot)
+    # FastAPI serverini backgroundda ishga tushirish
+    port = int(os.getenv("PORT", 10000))
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
+    server = uvicorn.Server(config)
+    
+    # Ikkalasini ham birga ishga tushirish
+    await asyncio.gather(
+        server.serve(),
+        dp.start_polling(bot)
+    )
 
 if __name__ == "__main__":
     try:
