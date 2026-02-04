@@ -848,8 +848,17 @@ async def handle_text_to_audio(message: Message):
     
     audio_path = tts.text_to_speech(content)
     if audio_path:
-        await message.answer_voice(FSInputFile(audio_path), caption=f"Matn: {content[:50]}...")
-        if os.path.exists(audio_path): os.remove(audio_path)
+        try:
+            await message.answer_voice(FSInputFile(audio_path), caption=f"Matn: {content[:50]}...")
+            if os.path.exists(audio_path): 
+                os.remove(audio_path)
+        except Exception as e:
+            logger.error(f"Voice sending error: {e}")
+            await message.answer("❌ Ovozli xabar yuborishda xatolik yuz berdi.")
+            if os.path.exists(audio_path): 
+                os.remove(audio_path)
+    else:
+        await message.answer("❌ Matnni ovozga aylantirishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
         
         # Limitni kamaytirish (barcha foydalanuvchilar uchun)
         user = db.get_user(user_id)
