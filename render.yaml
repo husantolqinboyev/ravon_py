@@ -9,20 +9,24 @@ services:
         value: "3.11.9"
       - key: BOT_TOKEN
         sync: false
-      - key: ADMIN_IDS
-        sync: false
-      - key: PING_URL
-        sync: false
-      - key: TEACHER_IDS
-        sync: false
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: DB_NAME
-        value: "ravon_ai.db"
+      - key: OPENROUTER_URL
+        value: "https://openrouter.ai/api/v1/chat/completions"
+      - key: MODEL_NAME
+        value: "google/gemini-3-flash-preview"
       - key: REQUIRED_CHANNEL
         value: "@englishwithSanatbek"
       - key: REQUIRED_CHANNEL_ID
         value: "-1003014655042"
+      - key: DB_NAME
+        value: "ravon_ai.db"
+      - key: ADMIN_IDS
+        sync: false
+      - key: TEACHER_IDS
+        sync: false
+      - key: PING_URL
+        value: "https://ravon-py.onrender.com/ping"
     healthCheckPath: /health
     autoDeploy: true
     plan: free
