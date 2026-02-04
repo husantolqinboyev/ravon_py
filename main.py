@@ -844,20 +844,27 @@ async def handle_text_to_audio(message: Message):
         return
 
     content = message.text
+    logger.info(f"TTS: Received text: '{content}'")
     await message.answer("Ovozli xabar tayyorlanmoqda... ⏳")
     
+    logger.info("TTS: Calling text_to_speech function...")
     audio_path = tts.text_to_speech(content)
+    logger.info(f"TTS: Function returned: {audio_path}")
+    
     if audio_path:
         try:
+            logger.info(f"TTS: Sending voice file: {audio_path}")
             await message.answer_voice(FSInputFile(audio_path), caption=f"Matn: {content[:50]}...")
             if os.path.exists(audio_path): 
                 os.remove(audio_path)
+                logger.info("TTS: Temporary file removed")
         except Exception as e:
-            logger.error(f"Voice sending error: {e}")
+            logger.error(f"TTS: Voice sending error: {e}")
             await message.answer("❌ Ovozli xabar yuborishda xatolik yuz berdi.")
             if os.path.exists(audio_path): 
                 os.remove(audio_path)
     else:
+        logger.error("TTS: No audio path returned")
         await message.answer("❌ Matnni ovozga aylantirishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
         
         # Limitni kamaytirish (barcha foydalanuvchilar uchun)
