@@ -9,30 +9,36 @@ def transcribe_audio_with_gemini(audio_file_path):
     OpenRouter Gemini modeli orqali ovozni matnga aylantirish
     """
     try:
+        print(f"STT: Processing audio file: {audio_file_path}")
+        
         # Audio faylni base64 formatiga o'tkazish
         with open(audio_file_path, "rb") as audio_file:
             audio_data = audio_file.read()
             audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+        
+        print(f"STT: Audio size: {len(audio_data)} bytes")
         
         headers = {
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "Content-Type": "application/json",
         }
         
+        # Gemini uchun to'g'ri format - inline_data
         payload = {
-            "model": MODEL_NAME,  # Config dan olingan model
+            "model": MODEL_NAME,
             "messages": [
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": "Please transcribe this audio file. Return only the transcribed text without any additional comments or formatting."
+                            "text": "Please transcribe this audio file. Return only the transcribed English text without any additional comments or formatting."
                         },
                         {
-                            "type": "image_url", 
-                            "image_url": {
-                                "url": f"data:audio/ogg;base64,{audio_base64}"
+                            "type": "inline_data",
+                            "inline_data": {
+                                "mime_type": "audio/ogg",
+                                "data": audio_base64
                             }
                         }
                     ]
@@ -41,18 +47,28 @@ def transcribe_audio_with_gemini(audio_file_path):
             "max_tokens": 200
         }
         
-        response = requests.post(OPENROUTER_URL, headers=headers, json=payload)
+        print("STT: Sending request to Gemini...")
+        response = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=30)
+        
+        print(f"STT: Response status: {response.status_code}")
         
         if response.status_code == 200:
             result = response.json()
-            transcribed_text = result['choices'][0]['message']['content'].strip()
-            return transcribed_text
+            print(f"STT: Response keys: {result.keys()}")
+            
+            if 'choices' in result and len(result['choices']) > 0:
+                transcribed_text = result['choices'][0]['message']['content'].strip()
+                print(f"STT: Transcribed text: '{transcribed_text}'")
+                return transcribed_text
+            else:
+                print("STT: No choices in response")
+                return None
         else:
-            print(f"Transcription error: {response.status_code} - {response.text}")
+            print(f"STT Error: {response.status_code} - {response.text}")
             return None
             
     except Exception as e:
-        print(f"Transcription exception: {str(e)}")
+        print(f"STT Exception: {str(e)}")
         return None
 
 def analyze_pronunciation(transcribed_text, original_text=None):

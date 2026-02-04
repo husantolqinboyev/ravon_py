@@ -13,23 +13,33 @@ def text_to_speech(text, lang='en'):
             print("TTS Error: Empty text")
             return None
             
-        tts = gTTS(text=text.strip(), lang=lang)
+        print(f"TTS: Processing text: '{text[:50]}...'")
         
-        # Render uchun temp papkadan foydalanish
-        temp_dir = tempfile.gettempdir()
-        unique_id = str(uuid.uuid4())[:8]
-        file_path = os.path.join(temp_dir, f"tts_{unique_id}.mp3")
-        
-        print(f"TTS: Saving to {file_path}")
-        tts.save(file_path)
-        
-        # Fayl mavjudligini tekshirish
-        if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-            print(f"TTS: Success - file size: {os.path.getsize(file_path)} bytes")
-            return file_path
-        else:
-            print("TTS Error: File not created or empty")
-            return None
+        # Avval gTTS ni urinib ko'rish
+        try:
+            tts = gTTS(text=text.strip(), lang=lang)
+            
+            # Render uchun temp papkadan foydalanish
+            temp_dir = tempfile.gettempdir()
+            unique_id = str(uuid.uuid4())[:8]
+            file_path = os.path.join(temp_dir, f"tts_{unique_id}.mp3")
+            
+            print(f"TTS: Saving to {file_path}")
+            tts.save(file_path)
+            
+            # Fayl mavjudligini tekshirish
+            if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+                print(f"TTS: Success - file size: {os.path.getsize(file_path)} bytes")
+                return file_path
+            else:
+                print("TTS: gTTS file not created or empty")
+                
+        except Exception as gtts_error:
+            print(f"TTS: gTTS failed: {gtts_error}")
+            
+        # gTTS ishlamasa, fallback sifatida oddiy text response
+        print("TTS: Using text fallback")
+        return None
             
     except Exception as e:
         print(f"TTS Error: {e}")
