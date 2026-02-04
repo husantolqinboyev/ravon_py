@@ -8,9 +8,6 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery
 
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from config import BOT_TOKEN
 import database as db
 import ai_handler as ai
