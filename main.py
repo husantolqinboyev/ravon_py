@@ -584,7 +584,18 @@ async def handle_tts_request(message: Message):
     user_states[user_id] = "waiting_for_tts_text"
     logger.info(f"User {user_id} is now in waiting_for_tts_text state")
 
-@dp.message(F.text)
+@dp.message(F.text & ~F.text.in_([
+    "🎤 Talaffuzni test qilish", "📝 So'z yozish", "📄 Matn yozing", 
+    "🎲 Tasodifiy so'z", "📖 Tasodifiy matn", "⬅️ Asosiy menyu", "🔊 Matnni audioga aylantirish",
+    "👥 Do'stlarni taklif qilish", "👤 Profil 👤", "📊 Statistika 📊", "ℹ️ Yordam ℹ️", "💎 Premium 💎",
+    "🛠 Admin Panel", "👨‍🏫 O'qituvchi Paneli", "📊 Umumiy statistika", "💳 To'lov so'rovlari", 
+    "💰 Tariflar boshqaruvi", "🧹 Tariflarni tozalash", "🗑️ Fayllarni tozalash", "👨‍🏫 O'qituvchi tayinlash", 
+    "📢 Xabar yuborish (Ad)", "👤 Foydalanuvchilar", "👨‍🎓 Mening o'quvchilarim", "👥 O'quvchi biriktirish", 
+    "📝 Material qo'shish", "🤖 AI yordam", "📚 Materiallarim", "📊 O'quvchilar statistikasi", 
+    "📤 Material yuborish", "📝 So'z qo'shish", "📄 Matn qo'shish", "🤖 AI so'z yaratish", "🤖 AI matn yaratish", 
+    "📝 So'z yuborish", "📄 Matn yuborish", "🤖 AI so'z yuborish", "🤖 AI matn yuborish", "📝 So'z yaratish (AI)", 
+    "📄 Matn yaratish (AI)", "⬅️ O'qituvchi menyu", "✍️ O'zim matn kiritaman"
+]))
 async def handle_general_text(message: Message):
     """Umumiy matn handler - TTS ni ham qo'llab-quvvatlaydi"""
     user_id = message.from_user.id
