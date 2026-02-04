@@ -584,6 +584,77 @@ async def handle_tts_request(message: Message):
     user_states[user_id] = "waiting_for_tts_text"
     logger.info(f"User {user_id} is now in waiting_for_tts_text state")
 
+# Test tugmalari - ularni umumiy text handler dan oldin qo'yish kerak
+@dp.message(F.text == "📝 So'z yozish")
+async def word_input_start(message: Message):
+    user_states[message.from_user.id] = "waiting_for_word"
+    await message.answer("Iltimos, talaffuz qilmoqchi bo'lgan so'zingizni yozing (faqat bitta so'z):")
+
+@dp.message(F.text == "📄 Matn yozish")
+async def text_input_start(message: Message):
+    user_states[message.from_user.id] = "waiting_for_text"
+    await message.answer("Iltimos, talaffuz qilmoqchi bo'lgan matningizni yozing (kamida 3 ta so'z):")
+
+@dp.message(F.text == "🎲 Tasodifiy so'z")
+async def random_word(message: Message):
+    user_id = message.from_user.id
+    
+    # Limitni tekshirish
+    limit_check = await check_user_limit(user_id)
+    if not limit_check["allowed"]:
+        await send_limit_exceeded_message(message, limit_check)
+        return
+    
+    # Database dan tasodifiy so'z olish
+    word = db.get_random_material("word")
+    if word:
+        current_test_texts[user_id] = word  # Matnni saqlash
+        user_states[user_id] = "waiting_for_voice"  # Ovoz kutish holatiga o'tkazish
+        await message.answer(f"Quyidagi so'zni talaffuz qiling:\n\n**{word}**", parse_mode="Markdown")
+        await message.answer("Endi ushbu so'zni ovozli xabar orqali yuboring.")
+    else:
+        # Agar database da so'z bo'lmasa, standart ro'yxatdan foydalanish
+        words = ["hello", "world", "computer", "programming", "language", "beautiful", "important", "development", "technology", "education"]
+        import random
+        word = random.choice(words)
+        current_test_texts[user_id] = word  # Matnni saqlash
+        user_states[user_id] = "waiting_for_voice"  # Ovoz kutish holatiga o'tkazish
+        await message.answer(f"Quyidagi so'zni talaffuz qiling:\n\n**{word}**", parse_mode="Markdown")
+        await message.answer("Endi ushbu so'zni ovozli xabar orqali yuboring.")
+
+@dp.message(F.text == "📖 Tasodifiy matn")
+async def random_text(message: Message):
+    user_id = message.from_user.id
+    
+    # Limitni tekshirish
+    limit_check = await check_user_limit(user_id)
+    if not limit_check["allowed"]:
+        await send_limit_exceeded_message(message, limit_check)
+        return
+    
+    # Database dan tasodifiy matn olish
+    text = db.get_random_material("text")
+    if text:
+        current_test_texts[user_id] = text  # Matnni saqlash
+        user_states[user_id] = "waiting_for_voice"  # Ovoz kutish holatiga o'tkazish
+        await message.answer(f"Quyidagi matnni talaffuz qiling:\n\n**{text}**", parse_mode="Markdown")
+        await message.answer("Endi ushbu matnni ovozli xabar orqali yuboring.")
+    else:
+        # Agar database da matn bo'lmasa, standart ro'yxatdan foydalanish
+        texts = [
+            "The weather is very nice today",
+            "I love programming in Python",
+            "Education is very important for everyone",
+            "Technology helps us solve many problems",
+            "Learning new languages is exciting"
+        ]
+        import random
+        text = random.choice(texts)
+        current_test_texts[user_id] = text  # Matnni saqlash
+        user_states[user_id] = "waiting_for_voice"  # Ovoz kutish holatiga o'tkazish
+        await message.answer(f"Quyidagi matnni talaffuz qiling:\n\n**{text}**", parse_mode="Markdown")
+        await message.answer("Endi ushbu matnni ovozli xabar orqali yuboring.")
+
 @dp.message(F.text & ~F.text.in_([
     "🎤 Talaffuzni test qilish", "📝 So'z yozish", "📄 Matn yozing", 
     "🎲 Tasodifiy so'z", "📖 Tasodifiy matn", "⬅️ Asosiy menyu", "🔊 Matnni audioga aylantirish",
@@ -768,76 +839,6 @@ async def send_limit_exceeded_message(message, limit_info):
         reply_markup=markup,
         parse_mode="Markdown"
     )
-
-@dp.message(F.text == "📝 So'z yozish")
-async def word_input_start(message: Message):
-    user_states[message.from_user.id] = "waiting_for_word"
-    await message.answer("Iltimos, talaffuz qilmoqchi bo'lgan so'zingizni yozing (faqat bitta so'z):")
-
-@dp.message(F.text == "📄 Matn yozish")
-async def text_input_start(message: Message):
-    user_states[message.from_user.id] = "waiting_for_text"
-    await message.answer("Iltimos, talaffuz qilmoqchi bo'lgan matningizni yozing (kamida 3 ta so'z):")
-
-@dp.message(F.text == "🎲 Tasodifiy so'z")
-async def random_word(message: Message):
-    user_id = message.from_user.id
-    
-    # Limitni tekshirish
-    limit_check = await check_user_limit(user_id)
-    if not limit_check["allowed"]:
-        await send_limit_exceeded_message(message, limit_check)
-        return
-    
-    # Database dan tasodifiy so'z olish
-    word = db.get_random_material("word")
-    if word:
-        current_test_texts[user_id] = word  # Matnni saqlash
-        user_states[user_id] = "waiting_for_voice"  # Ovoz kutish holatiga o'tkazish
-        await message.answer(f"Quyidagi so'zni talaffuz qiling:\n\n**{word}**", parse_mode="Markdown")
-        await message.answer("Endi ushbu so'zni ovozli xabar orqali yuboring.")
-    else:
-        # Agar database da so'z bo'lmasa, standart ro'yxatdan foydalanish
-        words = ["hello", "world", "computer", "programming", "language", "beautiful", "important", "development", "technology", "education"]
-        import random
-        word = random.choice(words)
-        current_test_texts[user_id] = word  # Matnni saqlash
-        user_states[user_id] = "waiting_for_voice"  # Ovoz kutish holatiga o'tkazish
-        await message.answer(f"Quyidagi so'zni talaffuz qiling:\n\n**{word}**", parse_mode="Markdown")
-        await message.answer("Endi ushbu so'zni ovozli xabar orqali yuboring.")
-
-@dp.message(F.text == "📖 Tasodifiy matn")
-async def random_text(message: Message):
-    user_id = message.from_user.id
-    
-    # Limitni tekshirish
-    limit_check = await check_user_limit(user_id)
-    if not limit_check["allowed"]:
-        await send_limit_exceeded_message(message, limit_check)
-        return
-    
-    # Database dan tasodifiy matn olish
-    text = db.get_random_material("sentence")
-    if text:
-        current_test_texts[user_id] = text  # Matnni saqlash
-        user_states[user_id] = "waiting_for_voice"  # Ovoz kutish holatiga o'tkazish
-        await message.answer(f"Quyidagi matnni talaffuz qiling:\n\n**{text}**", parse_mode="Markdown")
-        await message.answer("Endi ushbu matnni ovozli xabar orqali yuboring.")
-    else:
-        # Agar database da matn bo'lmasa, standart ro'yxatdan foydalanish
-        texts = [
-            "The weather is very nice today",
-            "I love learning new languages",
-            "Technology is changing our world",
-            "Education is very important for everyone",
-            "Programming helps solve many problems"
-        ]
-        import random
-        text = random.choice(texts)
-        current_test_texts[user_id] = text  # Matnni saqlash
-        user_states[user_id] = "waiting_for_voice"  # Ovoz kutish holatiga o'tkazish
-        await message.answer(f"Quyidagi matnni talaffuz qiling:\n\n**{text}**", parse_mode="Markdown")
-        await message.answer("Endi ushbu matnni ovozli xabar orqali yuboring.")
 
 # Foydalanuvchi yozgan matnni qabul qilish (state ga qarab)
 @dp.message(F.text & ~F.text.startswith("/") & ~F.text.in_([
