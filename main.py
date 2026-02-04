@@ -21,6 +21,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import BOT_TOKEN
+import config
 import database as db
 import ai_handler as ai
 import professional_pdf as report
@@ -34,8 +35,12 @@ from config import REQUIRED_CHANNEL
 logger.info(f"BOT_TOKEN loaded: {'Yes' if BOT_TOKEN else 'No'}")
 logger.info(f"Bot token length: {len(BOT_TOKEN) if BOT_TOKEN else 0}")
 
-# Logging
-logging.basicConfig(level=logging.INFO)
+# Additional debug for environment variables
+logger.info(f"OPENROUTER_API_KEY loaded: {'Yes' if hasattr(config, 'OPENROUTER_API_KEY') and config.OPENROUTER_API_KEY else 'No'}")
+logger.info(f"MODEL_NAME: {getattr(config, 'MODEL_NAME', 'Not found')}")
+
+# Keep DEBUG level for all logs
+logging.basicConfig(level=logging.DEBUG)
 
 from fastapi import FastAPI
 import uvicorn
