@@ -558,9 +558,13 @@ async def notify_admins_about_payment(user_id, amount, card_number):
         except Exception as e:
             print(f"Admin {admin_id} ga xabar yuborishda xatolik: {e}")
 
+# TTS tugmasi uchun yangi handler keyin qo'shiladi
+
 @dp.message(F.text == "🔊 Matnni audioga aylantirish")
-async def text_to_audio_start(message: Message):
+async def handle_tts_request(message: Message):
+    """TTS tugmasi bosilganda ishlaydigan yangi handler"""
     user_id = message.from_user.id
+    logger.info(f"TTS button pressed by user {user_id}")
     
     # Limitni tekshirish
     limit_check = await check_user_limit(user_id)
@@ -568,9 +572,75 @@ async def text_to_audio_start(message: Message):
         await send_limit_exceeded_message(message, limit_check)
         return
     
-    # Foydalanuvchini TTS rejimiga o'tkazish
-    user_states[user_id] = "tts_mode"
-    await message.answer("Iltimos, audioga aylantirmoqchi bo'lgan inglizcha matningizni yuboring:")
+    # Foydalanuvchidan matn so'rash
+    await message.answer("🔊 Iltimos, ovozga aylantirmoqchi bo'lgan inglizcha matningizni yuboring:")
+    
+    # Foydalanuvchini TTS kutish rejimiga o'tkazish
+    user_states[user_id] = "waiting_for_tts_text"
+    logger.info(f"User {user_id} is now in waiting_for_tts_text state")
+
+@dp.message(F.text)
+async def handle_general_text(message: Message):
+    """Umumiy matn handler - TTS ni ham qo'llab-quvvatlaydi"""
+    user_id = message.from_user.id
+    text = message.text.strip()
+    
+    logger.info(f"Text received: '{text}' from user {user_id}, state: {user_states.get(user_id, 'None')}")
+    
+    # Agar foydalanuvchi TTS matnini kutayotgan bo'lsa
+    if user_states.get(user_id) == "waiting_for_tts_text":
+        logger.info(f"Processing TTS request for text: '{text}'")
+        
+        # State ni tozalash
+        user_states.pop(user_id, None)
+        
+        # Limitni tekshirish
+        limit_check = await check_user_limit(user_id)
+        if not limit_check["allowed"]:
+            await send_limit_exceeded_message(message, limit_check)
+            return
+        
+        await message.answer("🔄 Ovozli xabar tayyorlanmoqda...")
+        
+        # TTS ni chaqirish
+        try:
+            logger.info("Calling TTS function...")
+            audio_path = tts.text_to_speech(text)
+            
+            if audio_path:
+                logger.info(f"TTS successful: {audio_path}")
+                await message.answer_voice(
+                    FSInputFile(audio_path), 
+                    caption=f"🔊 Matn: {text[:50]}{'...' if len(text) > 50 else ''}"
+                )
+                
+                # Faylni o'chirish
+                if os.path.exists(audio_path):
+                    os.remove(audio_path)
+                    logger.info("TTS file removed")
+                
+                # Limitni kamaytirish
+                user = db.get_user(user_id)
+                if user:
+                    db.decrement_limit(user_id)
+                    updated_user = db.get_user(user_id)
+                    limit_check = await check_user_limit(user_id)
+                    await message.answer(
+                        f"✅ Tayyor! Limit bittaga kamaydi. Qolgan: {updated_user[4]}\n"
+                        f"📊 Kunlik limit: {limit_check['daily_limit']} ta so'rov"
+                    )
+            else:
+                logger.error("TTS failed - no audio path returned")
+                await message.answer("❌ Ovozli xabar yaratishda xatolik. Iltimos, qayta urinib ko'ring.")
+                
+        except Exception as e:
+            logger.error(f"TTS error: {e}")
+            await message.answer("❌ Xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.")
+        
+        return
+    
+    # Agar foydalanuvchi boshqa state'larda bo'lsa, ularni qayta ishlash
+    # (boshqa handlerlar mavjud)
 
 @dp.message(F.text == "🎤 Talaffuzni test qilish")
 async def start_test(message: Message):
