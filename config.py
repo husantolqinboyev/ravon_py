@@ -33,6 +33,19 @@ DB_PATH = os.path.join(os.getcwd(), DB_NAME)
 # Debug: API keylarni tekshirish
 print(f"Config loaded:")
 print(f"BOT_TOKEN: {'✅' if BOT_TOKEN else '❌ Missing'}")
+if BOT_TOKEN:
+    print(f"BOT_TOKEN length: {len(BOT_TOKEN)}")
+    print(f"BOT_TOKEN starts with: {BOT_TOKEN[:10]}...")
+else:
+    print("BOT_TOKEN is None or empty!")
+    
 print(f"OPENROUTER_API_KEY: {'✅' if OPENROUTER_API_KEY else '❌ Missing'}")
+if OPENROUTER_API_KEY:
+    print(f"OPENROUTER_API_KEY length: {len(OPENROUTER_API_KEY)}")
+    print(f"OPENROUTER_API_KEY starts with: {OPENROUTER_API_KEY[:10]}...")
+else:
+    print("OPENROUTER_API_KEY is None or empty!")
+    
 print(f"MODEL_NAME: {MODEL_NAME}")
 print(f"REQUIRED_CHANNEL: {REQUIRED_CHANNEL}")
+print(f"Current working directory: {os.getcwd()}")
