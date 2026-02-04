@@ -3,12 +3,10 @@ services:
     name: ravon-bot
     env: python
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: python main.py
+    startCommand: PYTHONPATH=/opt/render/project/src python main.py
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
-      - key: PYTHONPATH
-        value: "/opt/render/project/src"
       - key: BOT_TOKEN
         sync: false
       - key: ADMIN_IDS
