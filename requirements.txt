@@ -1,34 +1,18 @@
-# Core
-aiogram==3.4.1
-
-# Web Server (for Render Health Checks)
-fastapi==0.109.2
-uvicorn==0.27.1
-
-# Async
-aiohttp==3.9.5
-httpx==0.26.0
-
-# Database
-aiosqlite==0.19.0
-
-# File handling
-python-multipart==0.0.9
-python-dotenv==1.0.0
-
-# Audio processing
-pydub==0.25.1
-gTTS==2.5.1
-
-# Images and PDF
-Pillow==10.4.0
-reportlab==4.2.0
-qrcode==7.4.2
-
-# Utilities
-ujson==5.10.0
-python-dateutil==2.9.0.post0
-colorlog==6.9.0
-requests==2.31.0
-typing-extensions==4.12.2
-regex==2024.11.6
+aiogram>=3.4.1
+fastapi
+uvicorn
+aiohttp
+httpx
+aiosqlite
+python-multipart
+python-dotenv
+pydub
+gTTS
+Pillow
+reportlab
+qrcode
+ujson
+python-dateutil
+colorlog
+requests
+typing-extensions>=4.5.0
