@@ -802,6 +802,9 @@ async def handle_user_input(message: Message):
         )
         return
 
+    logger.info(f"Text message received: '{text}' from user {user_id}")
+    logger.info(f"User state: {user_states.get(user_id, 'None')}")
+    
     # Agar foydalanuvchi so'z kiritish rejimida bo'lsa
     if user_states.get(user_id) == "waiting_for_word":
         if len(words) == 1:
