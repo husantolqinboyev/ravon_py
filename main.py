@@ -568,6 +568,8 @@ async def text_to_audio_start(message: Message):
         await send_limit_exceeded_message(message, limit_check)
         return
     
+    # Foydalanuvchini TTS rejimiga o'tkazish
+    user_states[user_id] = "tts_mode"
     await message.answer("Iltimos, audioga aylantirmoqchi bo'lgan inglizcha matningizni yuboring:")
 
 @dp.message(F.text == "🎤 Talaffuzni test qilish")
@@ -819,6 +821,12 @@ async def handle_user_input(message: Message):
             await message.answer("❌ Matnda kamida 3 ta so'z bo'lishi kerak. Iltimos, qayta yozing:")
         else:
             await message.answer("❌ Matnda kamida 3 ta so'z bo'lishi kerak. Iltimos, qayta yozing:")
+    
+    # Agar foydalanuvchi TTS rejimida bo'lsa
+    elif user_states.get(user_id) == "tts_mode":
+        await handle_text_to_audio(message)
+        # TTS rejimidan chiqarish
+        user_states.pop(user_id, None)
     
     # Agar foydalanuvchi test rejimida bo'lmasa, matnni audioga aylantirish
     else:
