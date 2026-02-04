@@ -37,10 +37,24 @@ def text_to_speech(text, lang='en'):
         except Exception as gtts_error:
             print(f"TTS: gTTS failed: {gtts_error}")
             
-        # gTTS ishlamasa, fallback sifatida oddiy text response
+        # gTTS ishlamasa, fallback sifatida text response
         print("TTS: Using text fallback")
         return None
             
     except Exception as e:
         print(f"TTS Error: {e}")
+        return None
+
+def test_tts():
+    """TTS funksiyasini test qilish uchun"""
+    try:
+        result = text_to_speech("hello world")
+        if result:
+            print(f"TTS Test: Success - {result}")
+            return result
+        else:
+            print("TTS Test: Failed")
+            return None
+    except Exception as e:
+        print(f"TTS Test Error: {e}")
         return None
