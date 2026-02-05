@@ -5,13 +5,24 @@ import base64
 from config import OPENROUTER_API_KEY, OPENROUTER_URL, MODEL_NAME
 
 # Import Vosk handler for offline STT
-from vosk_handler import transcribe_audio as vosk_transcribe
+try:
+    from vosk_handler import transcribe_audio as vosk_transcribe
+    VOSK_AVAILABLE = True
+    print("STT: Vosk imported successfully")
+except ImportError as e:
+    VOSK_AVAILABLE = False
+    print(f"STT: Vosk import failed: {e}")
+    vosk_transcribe = None
 
 def transcribe_audio_with_gemini(audio_file_path):
     """
     Vosk (offline) orqali ovozni matnga aylantirish
     """
     try:
+        if not VOSK_AVAILABLE:
+            print("STT: Vosk not available, skipping transcription")
+            return None
+            
         print(f"STT: Processing audio file with Vosk: {audio_file_path}")
         
         # Use Vosk for transcription
