@@ -2,6 +2,22 @@ import sqlite3
 import datetime
 from config import DB_NAME, ADMIN_IDS, TEACHER_IDS
 
+# Global SQLite settings to reduce 'database is locked'
+_sqlite_connect = sqlite3.connect
+
+def _connect(path, **kwargs):
+    kwargs.setdefault("timeout", 30)
+    kwargs.setdefault("check_same_thread", False)
+    conn = _sqlite_connect(path, **kwargs)
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA busy_timeout=30000;")
+    except Exception:
+        pass
+    return conn
+
+sqlite3.connect = _connect
+
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
