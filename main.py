@@ -164,6 +164,14 @@ async def cmd_teacher(message: Message):
     else:
         await message.answer("Siz o'qituvchi emassiz.")
 
+@dp.message(Command("admin"))
+async def cmd_admin_direct(message: Message):
+    if db.is_admin(message.from_user.id):
+        from admin_panel import cmd_admin
+        await cmd_admin(message)
+    else:
+        await message.answer("Kechirasiz, siz admin emassiz.")
+
 @dp.message(F.text == "👥 Do'stlarni taklif qilish")
 async def show_referral_system(message: Message):
     user_id = message.from_user.id
