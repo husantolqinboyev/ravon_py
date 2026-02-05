@@ -348,11 +348,26 @@ async def send_material_to_all_students(teacher_id, content, material_type, bot_
     success_count = 0
     error_count = 0
     
+    # main.py dagi lug'atlarga kirish
+    import sys
+    main_module = sys.modules.get('main')
+    if not main_module:
+        return False
+    
+    current_test_texts = getattr(main_module, 'current_test_texts', {})
+    user_states = getattr(main_module, 'user_states', {})
+    
     for student in students:
         try:
+            student_id = student[0]
+            
+            # O'quvchi uchun test matnini sozlash
+            current_test_texts[student_id] = content
+            user_states[student_id] = "waiting_for_voice"
+            
             if material_type == "word":
                 await bot_instance.send_message(
-                    student[0],  # user_id
+                    student_id,
                     f"📚 **Yangi so'z!**\n\n"
                     f"👨‍🏫 Sizning o'qituvchingiz yubordi:\n"
                     f"🔤 **{content}**\n\n"
@@ -361,7 +376,7 @@ async def send_material_to_all_students(teacher_id, content, material_type, bot_
                 )
             else:  # sentence
                 await bot_instance.send_message(
-                    student[0],  # user_id
+                    student_id,
                     f"📖 **Yangi matn!**\n\n"
                     f"👨‍🏫 Sizning o'qituvchingiz yubordi:\n"
                     f"📝 **{content}**\n\n"

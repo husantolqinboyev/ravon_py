@@ -18,7 +18,7 @@ def get_admin_menu():
         [KeyboardButton(text="📊 Umumiy statistika")],
         [KeyboardButton(text="💳 To'lov so'rovlari")],
         [KeyboardButton(text="💰 Tariflar boshqaruvi"), KeyboardButton(text="🧹 Tariflarni tozalash")],
-        [KeyboardButton(text="�️ Fayllarni tozalash"), KeyboardButton(text="�👨‍🏫 O'qituvchi tayinlash")],
+        [KeyboardButton(text="🗑️ Fayllarni tozalash"), KeyboardButton(text="👨‍🏫 O'qituvchi tayinlash")],
         [KeyboardButton(text="📢 Xabar yuborish (Ad)"), KeyboardButton(text="👤 Foydalanuvchilar")],
         [KeyboardButton(text="⬅️ Asosiy menyu")]
     ]
@@ -44,7 +44,7 @@ async def cmd_admin(message: Message):
             "To'lovlarni tasdiqlash va tariflarni tahrirlash endi qulay inline tugmalar orqali amalga oshiriladi.\n\n"
             "📊 **Statistika:** Botdagi foydalanuvchilar va testlar.\n"
             "💳 **To'lovlar:** Yangi kelgan to'lovlarni tasdiqlash.\n"
-            "� **Tariflar:** Narx va limitlarni o'zgartirish.\n"
+            "💰 **Tariflar:** Narx va limitlarni o'zgartirish.\n"
             "📢 **Reklama:** Barchaga xabar yuborish."
         )
         await message.answer(help_text, reply_markup=get_admin_menu(), parse_mode="Markdown")
