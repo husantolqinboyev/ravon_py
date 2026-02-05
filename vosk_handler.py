@@ -56,10 +56,10 @@ def download_model():
 
 def init_vosk():
     """Initialize Vosk model"""
-    global _model
+    global model
     
-    if _model is not None:
-        return _model
+    if model is not None:
+        return model
     
     # Check if model exists, download if not
     if not check_model_exists():
@@ -71,9 +71,9 @@ def init_vosk():
     model_path = get_model_path()
     
     try:
-        _model = Model(model_path)
+        model = Model(model_path)
         print(f"VOSK: Model loaded from {model_path}")
-        return _model
+        return model
     except Exception as e:
         print(f"VOSK: Error loading model: {e}")
         return None
