@@ -11,7 +11,10 @@ Ravon AI - bu ingliz tili talaffuzini AI yordamida tekshiruvchi Telegram boti.
 - **🛠 Admin Paneli** - Foydalanuvchilar, to'lovlar va statistikani boshqarish
 
 ## 🚀 Installation
-
+STT: Processing audio file with Vosk: temp_audio_xxx.ogg
+VOSK: Transcribing temp_audio_xxx.ogg
+VOSK: Transcribed: 'I love programming in Python'
+STT: Vosk transcribed: 'I love programming in Python'
 ### Talablar:
 - Python 3.8+
 - Telegram Bot Token
