@@ -46,6 +46,5 @@ if OPENROUTER_API_KEY:
 else:
     print("OPENROUTER_API_KEY is None or empty!")
     
-print(f"MODEL_NAME: {MODEL_NAME}")
-print(f"REQUIRED_CHANNEL: {REQUIRED_CHANNEL}")
-print(f"Current working directory: {os.getcwd()}")
+print(f"ADMIN_IDS loaded: {ADMIN_IDS}")
+print(f"TEACHER_IDS loaded: {TEACHER_IDS}")
