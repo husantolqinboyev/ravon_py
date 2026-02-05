@@ -999,6 +999,7 @@ async def handle_voice(message: Message):
         # Pronunciation test logic ni davom ettirish
         await process_pronunciation_test(message, user_id, original_text)
         del user_states[user_id]  # Test tugagandan so'ng holatni tozalash
+        current_test_texts.pop(user_id, None)  # Test matnini ham tozalash
         return
     
     # Limitni tekshirish (oddiy voice message uchun)
