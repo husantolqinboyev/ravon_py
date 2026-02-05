@@ -12,6 +12,8 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 # OpenRouter sozlamalari
 OPENROUTER_URL = os.getenv("OPENROUTER_URL", "https://openrouter.ai/api/v1/chat/completions")
 MODEL_NAME = os.getenv("MODEL_NAME", "google/gemini-3-flash-preview")
+OPENROUTER_AUDIO_URL = os.getenv("OPENROUTER_AUDIO_URL", "https://openrouter.ai/api/v1/audio/transcriptions")
+STT_MODEL_NAME = os.getenv("STT_MODEL_NAME", "openai/whisper-1")
 
 # Kanal sozlamalari
 REQUIRED_CHANNEL = os.getenv("REQUIRED_CHANNEL", "@englishwithSanatbek")

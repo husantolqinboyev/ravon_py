@@ -4,73 +4,24 @@ import time
 import base64
 from config import OPENROUTER_API_KEY, OPENROUTER_URL, MODEL_NAME
 
+# Import Vosk handler for offline STT
+from vosk_handler import transcribe_audio as vosk_transcribe
+
 def transcribe_audio_with_gemini(audio_file_path):
     """
-    OpenRouter Gemini modeli orqali ovozni matnga aylantirish
+    Vosk (offline) orqali ovozni matnga aylantirish
     """
     try:
-        print(f"STT: Processing audio file: {audio_file_path}")
+        print(f"STT: Processing audio file with Vosk: {audio_file_path}")
         
-        # Audio faylni base64 formatiga o'tkazish
-        with open(audio_file_path, "rb") as audio_file:
-            audio_data = audio_file.read()
-            audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+        # Use Vosk for transcription
+        transcribed_text = vosk_transcribe(audio_file_path)
         
-        print(f"STT: Audio size: {len(audio_data)} bytes")
-        
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json",
-        }
-        
-        # Telegram voice uchun format
-        payload = {
-            "model": MODEL_NAME,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Transcribe this English audio file. Return only the transcribed text without any additional comments."
-                        },
-                        {
-                            "type": "input_audio",
-                            "input_audio": {
-                                "data": audio_base64,
-                                "format": "oga"
-                            }
-                        }
-                    ]
-                }
-            ],
-            "max_tokens": 200
-        }
-        
-        print("STT: Sending request to Gemini...")
-        response = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=30)
-        
-        print(f"STT: Response status: {response.status_code}")
-        
-        if response.status_code == 200:
-            result = response.json()
-            print(f"STT: Response keys: {result.keys()}")
-            
-            if 'choices' in result and len(result['choices']) > 0:
-                transcribed_text = result['choices'][0]['message']['content'].strip()
-                print(f"STT: Transcribed text: '{transcribed_text}'")
-                
-                # Agar javob transkripsiya bo'lmasa
-                if len(transcribed_text) > 100 or "please provide" in transcribed_text.lower():
-                    print("STT: Got generic response, returning None")
-                    return None
-                
-                return transcribed_text
-            else:
-                print("STT: No choices in response")
-                return None
+        if transcribed_text:
+            print(f"STT: Vosk transcribed: '{transcribed_text}'")
+            return transcribed_text
         else:
-            print(f"STT Error: {response.status_code} - {response.text}")
+            print("STT: Vosk transcription failed")
             return None
             
     except Exception as e:

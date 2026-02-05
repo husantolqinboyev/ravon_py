@@ -16,3 +16,4 @@ python-dateutil
 colorlog
 requests
 typing-extensions>=4.5.0
+vosk
