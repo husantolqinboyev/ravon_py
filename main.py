@@ -242,6 +242,45 @@ async def admin_panel_button(message: Message):
     else:
         await message.answer("Siz admin emassiz.")
 
+@dp.message(F.text.in_([
+    "📊 Umumiy statistika", "💳 To'lov so'rovlari", "💰 Tariflar boshqaruvi",
+    "🧹 Tariflarni tozalash", "🗑️ Fayllarni tozalash", "👨‍🏫 O'qituvchi tayinlash",
+    "📢 Xabar yuborish (Ad)", "👤 Foydalanuvchilar"
+]))
+async def admin_menu_buttons(message: Message):
+    if not db.is_admin(message.from_user.id):
+        await message.answer("Siz admin emassiz.")
+        return
+
+    from admin_panel import (
+        show_admin_stats,
+        view_payments,
+        manage_tariffs,
+        clean_tariffs,
+        clean_files,
+        start_assign_teacher,
+        start_broadcast,
+        show_users_list,
+    )
+
+    text = message.text
+    if text == "📊 Umumiy statistika":
+        await show_admin_stats(message)
+    elif text == "💳 To'lov so'rovlari":
+        await view_payments(message)
+    elif text == "💰 Tariflar boshqaruvi":
+        await manage_tariffs(message)
+    elif text == "🧹 Tariflarni tozalash":
+        await clean_tariffs(message)
+    elif text == "🗑️ Fayllarni tozalash":
+        await clean_files(message)
+    elif text == "👨‍🏫 O'qituvchi tayinlash":
+        await start_assign_teacher(message)
+    elif text == "📢 Xabar yuborish (Ad)":
+        await start_broadcast(message)
+    elif text == "👤 Foydalanuvchilar":
+        await show_users_list(message)
+
 @dp.message(F.text == "👨‍🏫 O'qituvchi Paneli")
 async def teacher_panel_button(message: Message):
     if db.is_teacher(message.from_user.id):
