@@ -23,7 +23,7 @@ def transcribe_audio_with_gemini(audio_file_path):
             "Content-Type": "application/json",
         }
         
-        # Gemini uchun to'g'ri format - WAV formatida yuborish
+        # Telegram voice uchun format
         payload = {
             "model": MODEL_NAME,
             "messages": [
@@ -38,7 +38,7 @@ def transcribe_audio_with_gemini(audio_file_path):
                             "type": "input_audio",
                             "input_audio": {
                                 "data": audio_base64,
-                                "format": "ogg"
+                                "format": "oga"
                             }
                         }
                     ]
@@ -60,22 +60,22 @@ def transcribe_audio_with_gemini(audio_file_path):
                 transcribed_text = result['choices'][0]['message']['content'].strip()
                 print(f"STT: Transcribed text: '{transcribed_text}'")
                 
-                # Agar javob transkripsiya bo'lmasa, fallback
+                # Agar javob transkripsiya bo'lmasa
                 if len(transcribed_text) > 100 or "please provide" in transcribed_text.lower():
-                    print("STT: Got generic response, using fallback")
-                    return "The weather is very nice today"  # Temporary fallback
+                    print("STT: Got generic response, returning None")
+                    return None
                 
                 return transcribed_text
             else:
                 print("STT: No choices in response")
-                return "The weather is very nice today"  # Temporary fallback
+                return None
         else:
             print(f"STT Error: {response.status_code} - {response.text}")
-            return "The weather is very nice today"  # Temporary fallback
+            return None
             
     except Exception as e:
         print(f"STT Exception: {str(e)}")
-        return "The weather is very nice today"  # Temporary fallback
+        return None
 
 def analyze_pronunciation(transcribed_text, original_text=None):
     """
