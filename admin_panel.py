@@ -17,10 +17,10 @@ def get_admin_menu():
     buttons = [
         [KeyboardButton(text="📊 Umumiy statistika")],
         [KeyboardButton(text="💳 To'lov so'rovlari")],
-        [KeyboardButton(text="💰 Tariflar boshqaruvi"), KeyboardButton(text="🧹 Tariflarni tozalash")],
-        [KeyboardButton(text="🗑️ Fayllarni tozalash"), KeyboardButton(text="👨‍🏫 O'qituvchi tayinlash")],
-        [KeyboardButton(text="📢 Xabar yuborish (Ad)"), KeyboardButton(text="👤 Foydalanuvchilar")],
-        [KeyboardButton(text="⬅️ Asosiy menyu")]
+        [KeyboardButton(text="💰 Tariflar boshqaruvi"), KeyboardButton(text="🔢 Limitlarni boshqarish")],
+        [KeyboardButton(text="🧹 Tariflarni tozalash"), KeyboardButton(text="👨‍🏫 O'qituvchi tayinlash")],
+        [KeyboardButton(text="�️ Fayllarni tozalash"), KeyboardButton(text="� Xabar yuborish (Ad)")],
+        [KeyboardButton(text="👤 Foydalanuvchilar"), KeyboardButton(text="⬅️ Asosiy menyu")]
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
@@ -41,10 +41,12 @@ async def cmd_admin(message: Message):
         help_text = (
             "🛠 **Admin Boshqaruv Paneli**\n\n"
             "Botni boshqarish uchun quyidagi tugmalardan foydalaning. "
-            "To'lovlarni tasdiqlash va tariflarni tahrirlash endi qulay inline tugmalar orqali amalga oshiriladi.\n\n"
+            "Endi o'qituvchi tayinlash va limitlarni boshqarish juda oson!\n\n"
             "📊 **Statistika:** Botdagi foydalanuvchilar va testlar.\n"
             "💳 **To'lovlar:** Yangi kelgan to'lovlarni tasdiqlash.\n"
             "💰 **Tariflar:** Narx va limitlarni o'zgartirish.\n"
+            "🔢 **Limitlar:** Barcha foydalanuvchilar limitini boshqarish.\n"
+            "👨‍🏫 **O'qituvchi tayinlash:** Foydalanuvchilarni o'qituvchi qilish.\n"
             "📢 **Reklama:** Barchaga xabar yuborish."
         )
         await message.answer(help_text, reply_markup=get_admin_menu(), parse_mode="Markdown")
@@ -209,17 +211,182 @@ async def process_payment_callback(callback: CallbackQuery):
 @admin_router.message(F.text == "👨‍🏫 O'qituvchi tayinlash")
 async def start_assign_teacher(message: Message):
     if db.is_admin(message.from_user.id):
-        await message.answer("O'qituvchi qilmoqchi bo'lgan foydalanuvchining ID raqamini yuboring:\nMasalan: `/set_teacher_12345678`")
+        users = db.get_all_users()
+        
+        if not users:
+            await message.answer("❌ Hech qanday foydalanuvchi topilmadi!")
+            return
+        
+        text = "👨‍🏫 **O'qituvchi tayinlash**\n\nQuyidagi foydalanuvchilardan birini tanlang:"
+        
+        # 3 ta foydalanuvchi har bir qatorda
+        buttons = []
+        current_row = []
+        
+        for i, user in enumerate(users[:15]):  # Birinchi 15 ta foydalanuvchi
+            user_id, full_name, username = user[0], user[1] or "Ism yo'q", user[2] or "username yo'q"
+            button_text = f"{full_name} (@{username})"
+            
+            current_row.append(InlineKeyboardButton(
+                text=button_text, 
+                callback_data=f"assign_teacher_{user_id}"
+            ))
+            
+            if len(current_row) == 1:  # Har bir qatorda 1 ta foydalanuvchi
+                buttons.append(current_row)
+                current_row = []
+        
+        if current_row:
+            buttons.append(current_row)
+        
+        # Agar foydalanuvchilar ko'p bo'lsa, qidirish tugmasi
+        if len(users) > 15:
+            buttons.append([InlineKeyboardButton(
+                text="🔍 Boshqa foydalanuvchilarni qidirish",
+                callback_data="search_users_teacher"
+            )])
+        
+        buttons.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_admin")])
+        
+        markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+        await message.answer(text, reply_markup=markup, parse_mode="Markdown")
 
-@admin_router.message(F.text.startswith("/set_teacher_"))
-async def set_teacher(message: Message):
-    if db.is_admin(message.from_user.id):
+@admin_router.callback_query(F.data.startswith("assign_teacher_"))
+async def assign_teacher_callback(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        user_id = int(callback.data.split("_")[2])
+        
         try:
-            user_id = int(message.text.split("_")[2])
-            db.add_teacher(user_id, message.from_user.id)
-            await message.answer(f"Foydalanuvchi {user_id} muvaffaqiyatli o'qituvchi qilib tayinlandi! ✅")
-        except:
-            await message.answer("Xatolik! ID raqamini to'g'ri kiriting.")
+            # Tekshirish - allaqachon o'qituvchi emasligini
+            if db.is_teacher(user_id):
+                await callback.answer("Bu foydalanuvchi allaqachon o'qituvchi!", show_alert=True)
+                return
+            
+            db.add_teacher(user_id, callback.from_user.id)
+            
+            # Foydalanuvchi ma'lumotlarini olish
+            user = db.get_user(user_id)
+            if user:
+                user_name = user[1] or "Ism yo'q"
+                await callback.message.answer(
+                    f"✅ **{user_name}** muvaffaqiyatli o'qituvchi qilib tayinlandi!\n"
+                    f"🆔 ID: {user_id}",
+                    parse_mode="Markdown"
+                )
+            else:
+                await callback.message.answer(f"✅ Foydalanuvchi {user_id} muvaffaqiyatli o'qituvchi qilib tayinlandi!")
+            
+            await callback.answer("O'qituvchi tayinlandi!")
+            
+        except Exception as e:
+            await callback.answer(f"Xatolik: {str(e)}", show_alert=True)
+
+@admin_router.callback_query(F.data == "back_to_admin")
+async def back_to_admin_callback(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        await callback.message.answer(
+            "🛠 **Admin Paneliga qaytdingiz**",
+            reply_markup=get_admin_menu(),
+            parse_mode="Markdown"
+        )
+        await callback.answer()
+
+@admin_router.message(F.text == "� Limitlarni boshqarish")
+async def manage_limits(message: Message):
+    if db.is_admin(message.from_user.id):
+        text = (
+            "🔢 **Limitlarni Boshqarish**\n\n"
+            "Quyidagi amallardan birini tanlang:\n\n"
+            "👥 **Barcha foydalanuvchilar limiti** - Barcha uchun umumiy limit o'rnatish\n"
+            "🎯 **Bitta foydalanuvchi** - Ma'lum bir foydalanuvchi limitini o'zgartirish\n"
+            "🔄 **Kunlik limitni tiklash** - Barcha foydalanuvchilar limitini tiklash"
+        )
+        
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="👥 Barcha uchun limit o'rnatish", callback_data="set_all_limits"),
+                InlineKeyboardButton(text="🎯 Bitta foydalanuvchi limiti", callback_data="set_user_limit")
+            ],
+            [
+                InlineKeyboardButton(text="🔄 Barcha limitlarni tiklash", callback_data="reset_all_limits"),
+                InlineKeyboardButton(text="📊 Limit statistikasi", callback_data="limit_stats")
+            ],
+            [
+                InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_admin")
+            ]
+        ])
+        
+        await message.answer(text, reply_markup=markup, parse_mode="Markdown")
+
+@admin_router.callback_query(F.data == "set_all_limits")
+async def set_all_limits_callback(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        await callback.message.answer(
+            "👥 **Barcha foydalanuvchilar uchun limit**\n\n"
+            "Yangi limitni kiriting (raqamda):\n"
+            "Masalan: `5` (kuniga 5 ta test)\n\n"
+            "⚠️ Eslatma: Bu barcha foydalanuvchilar limitini o'zgartiradi!",
+            parse_mode="Markdown"
+        )
+        
+        # State o'rnatish - keyingi xabarni kutish uchun
+        # Bu yerda state management qo'shish kerak
+        await callback.answer()
+
+@admin_router.callback_query(F.data == "reset_all_limits")
+async def reset_all_limits_callback(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        try:
+            # Barcha foydalanuvchilar limitini tiklash
+            conn = db.sqlite3.connect(db.DB_NAME)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET daily_limit = 3 WHERE subscription_id IS NULL")
+            cursor.execute("UPDATE users SET daily_limit = (SELECT daily_limit FROM tariffs WHERE users.subscription_id = tariffs.id) WHERE subscription_id IS NOT NULL")
+            conn.commit()
+            conn.close()
+            
+            await callback.message.answer("✅ Barcha foydalanuvchilar limiti muvaffaqiyatli tiklandi!")
+            await callback.answer("Limitlar tiklandi!")
+            
+        except Exception as e:
+            await callback.answer(f"Xatolik: {str(e)}", show_alert=True)
+
+@admin_router.callback_query(F.data == "limit_stats")
+async def limit_stats_callback(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        try:
+            conn = db.sqlite3.connect(db.DB_NAME)
+            cursor = conn.cursor()
+            
+            # Limit statistikasi
+            cursor.execute("SELECT COUNT(*) FROM users WHERE daily_limit > 0")
+            active_users = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT AVG(daily_limit) FROM users WHERE daily_limit > 0")
+            avg_limit = cursor.fetchone()[0] or 0
+            
+            cursor.execute("SELECT COUNT(*) FROM users WHERE daily_limit = 0")
+            zero_limit_users = cursor.fetchone()[0]
+            
+            conn.close()
+            
+            text = (
+                f"📊 **Limit Statistikasi**\n\n"
+                f"👥 Faol foydalanuvchilar: {active_users} ta\n"
+                f"📈 O'rtacha limit: {avg_limit:.1f} ta\n"
+                f"⚠️ Limiti tugagan: {zero_limit_users} ta\n\n"
+                f"🔄 Kunlik limitlar har soat 00:00 da tiklanadi."
+            )
+            
+            markup = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_admin")]
+            ])
+            
+            await callback.message.answer(text, reply_markup=markup, parse_mode="Markdown")
+            await callback.answer()
+            
+        except Exception as e:
+            await callback.answer(f"Xatolik: {str(e)}", show_alert=True)
 
 @admin_router.message(F.text == "💰 Tariflar boshqaruvi")
 async def manage_tariffs(message: Message):

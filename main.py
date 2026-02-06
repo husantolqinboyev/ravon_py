@@ -244,8 +244,8 @@ async def admin_panel_button(message: Message):
 
 @dp.message(F.text.in_([
     "📊 Umumiy statistika", "💳 To'lov so'rovlari", "💰 Tariflar boshqaruvi",
-    "🧹 Tariflarni tozalash", "🗑️ Fayllarni tozalash", "👨‍🏫 O'qituvchi tayinlash",
-    "📢 Xabar yuborish (Ad)", "👤 Foydalanuvchilar"
+    "🔢 Limitlarni boshqarish", "🧹 Tariflarni tozalash", "🗑️ Fayllarni tozalash", 
+    "👨‍🏫 O'qituvchi tayinlash", "📢 Xabar yuborish (Ad)", "👤 Foydalanuvchilar"
 ]))
 async def admin_menu_buttons(message: Message):
     if not db.is_admin(message.from_user.id):
@@ -256,6 +256,7 @@ async def admin_menu_buttons(message: Message):
         show_admin_stats,
         view_payments,
         manage_tariffs,
+        manage_limits,
         clean_tariffs,
         clean_files,
         start_assign_teacher,
@@ -270,6 +271,8 @@ async def admin_menu_buttons(message: Message):
         await view_payments(message)
     elif text == "💰 Tariflar boshqaruvi":
         await manage_tariffs(message)
+    elif text == "🔢 Limitlarni boshqarish":
+        await manage_limits(message)
     elif text == "🧹 Tariflarni tozalash":
         await clean_tariffs(message)
     elif text == "🗑️ Fayllarni tozalash":
