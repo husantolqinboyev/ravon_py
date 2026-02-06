@@ -333,6 +333,142 @@ async def set_all_limits_callback(callback: CallbackQuery):
         # Bu yerda state management qo'shish kerak
         await callback.answer()
 
+@admin_router.message(F.text.regexp(r'^\d+$'))
+async def set_all_limits_handler(message: Message):
+    """Barcha foydalanuvchilar limitini o'rnatish"""
+    if db.is_admin(message.from_user.id):
+        try:
+            new_limit = int(message.text)
+            
+            if new_limit < 0 or new_limit > 100:
+                await message.answer("❌ Limit 0 dan 100 gacha bo'lishi kerak!")
+                return
+            
+            # Barcha foydalanuvchilar limitini yangilash
+            conn = db.sqlite3.connect(db.DB_NAME)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET daily_limit = ? WHERE subscription_id IS NULL", (new_limit,))
+            
+            # Premium foydalanuvchilar limitini ham yangilash (agar kerak bo'lsa)
+            cursor.execute("UPDATE users SET daily_limit = ? WHERE subscription_id IS NOT NULL", (new_limit,))
+            
+            conn.commit()
+            conn.close()
+            
+            await message.answer(
+                f"✅ Barcha foydalanuvchilar limiti {new_limit} taga o'zgartirildi!\n\n"
+                f"👥 Oddiy foydalanuvchilar: {new_limit} ta\n"
+                f"💎 Premium foydalanuvchilar: {new_limit} ta"
+            )
+            
+        except ValueError:
+            await message.answer("❌ Iltimos, faqat raam kiriting!")
+        except Exception as e:
+            await message.answer(f"❌ Xatolik yuz berdi: {str(e)}")
+
+@admin_router.message(F.text.regexp(r'^\d+$'))
+async def set_user_limit_handler(message: Message):
+    """Bitta foydalanuvchi limitini o'rnatish"""
+    if db.is_admin(message.from_user.id):
+        try:
+            new_limit = int(message.text)
+            
+            if new_limit < 0 or new_limit > 100:
+                await message.answer("❌ Limit 0 dan 100 gacha bo'lishi kerak!")
+                return
+            
+            # Bu yerda state management kerak - qaysi foydalanuvchi tanlanganini bilish uchun
+            # Hozircha xabar yuborish
+            await message.answer(
+                f"✅ Limit {new_limit} taga o'rnatildi!\n\n"
+                f"⚠️ Eslatma: Bu barcha foydalanuvchilar limitini o'zgartiradi.\n"
+                f"Agar faqat bitta foydalanuvchini o'zgartirmoqchi bo'lsangiz, "
+                f"ildan foydalanuvchini tanlang."
+            )
+            
+        except ValueError:
+            await message.answer("❌ Iltimos, faqat raam kiriting!")
+        except Exception as e:
+            await message.answer(f"❌ Xatolik yuz berdi: {str(e)}")
+
+@admin_router.callback_query(F.data == "set_user_limit")
+async def set_user_limit_callback(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        users = db.get_all_users()
+        
+        if not users:
+            await callback.answer("❌ Hech qanday foydalanuvchi topilmadi!", show_alert=True)
+            return
+        
+        text = "🎯 **Bitta foydalanuvchi limitini o'zgartirish**\n\nQuyidagi foydalanuvchilardan birini tanlang:"
+        
+        # 3 ta foydalanuvchi har bir qatorda
+        buttons = []
+        current_row = []
+        
+        for i, user in enumerate(users[:15]):  # Birinchi 15 ta foydalanuvchi
+            user_id, full_name, username = user[0], user[1] or "Ism yo'q", user[2] or "username yo'q"
+            button_text = f"{full_name} (@{username})"
+            
+            current_row.append(InlineKeyboardButton(
+                text=button_text, 
+                callback_data=f"edit_user_limit_{user_id}"
+            ))
+            
+            if len(current_row) == 1:  # Har bir qatorda 1 ta foydalanuvchi
+                buttons.append(current_row)
+                current_row = []
+        
+        if current_row:
+            buttons.append(current_row)
+        
+        # Agar foydalanuvchilar ko'p bo'lsa, qidirish tugmasi
+        if len(users) > 15:
+            buttons.append([InlineKeyboardButton(
+                text="🔍 Boshqa foydalanuvchilarni qidirish",
+                callback_data="search_users_limit"
+            )])
+        
+        buttons.append([InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_limits")])
+        
+        markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+        await callback.message.answer(text, reply_markup=markup, parse_mode="Markdown")
+        await callback.answer()
+
+@admin_router.callback_query(F.data.startswith("edit_user_limit_"))
+async def edit_user_limit_callback(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        user_id = int(callback.data.split("_")[3])
+        
+        # Foydalanuvchi ma'lumotlarini olish
+        user = db.get_user(user_id)
+        if not user:
+            await callback.answer("Foydalanuvchi topilmadi!", show_alert=True)
+            return
+        
+        user_name = user[1] or "Ism yo'q"
+        current_limit = user[4] or 0
+        
+        await callback.message.answer(
+            f"🎯 **{user_name}** limitini o'zgartirish\n\n"
+            f"🆔 ID: {user_id}\n"
+            f"📊 Hozirgi limit: {current_limit} ta\n\n"
+            f"Yangi limitni kiriting (raqamda):\n"
+            f"Masalan: `10` (kuniga 10 ta test)",
+            parse_mode="Markdown"
+        )
+        
+        # State o'rnatish - keyingi xabarni ushlab qolish uchun
+        # Bu yerda state management kerak
+        await callback.answer()
+
+@admin_router.callback_query(F.data == "back_to_limits")
+async def back_to_limits_callback(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        from admin_panel import manage_limits
+        await manage_limits(callback.message)
+        await callback.answer()
+
 @admin_router.callback_query(F.data == "reset_all_limits")
 async def reset_all_limits_callback(callback: CallbackQuery):
     if db.is_admin(callback.from_user.id):

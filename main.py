@@ -19,7 +19,6 @@ logger.info(f"Files in current directory: {os.listdir('.')}")
 
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from config import BOT_TOKEN
 import config
 import database as db
@@ -88,8 +87,21 @@ async def keep_alive_ping():
 from admin_panel import set_bot_instance
 set_bot_instance(bot)
 
-dp.include_router(teacher_router)
 dp.include_router(admin_router)
+dp.include_router(teacher_router)
+
+# Admin panel callback handlers
+from admin_panel import (
+    assign_teacher_callback,
+    back_to_admin_callback,
+    manage_limits,
+    set_all_limits_callback,
+    reset_all_limits_callback,
+    limit_stats_callback,
+    set_user_limit_callback,
+    edit_user_limit_callback,
+    back_to_limits_callback,
+)
 
 # Kanalga a'zolikni tekshirish funksiyasi
 async def check_subscription(user_id):

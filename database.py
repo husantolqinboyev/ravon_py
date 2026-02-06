@@ -511,10 +511,10 @@ def get_stats():
 def get_all_users():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute('SELECT user_id FROM users')
+    cursor.execute('SELECT user_id, full_name, username FROM users ORDER BY full_name')
     users = cursor.fetchall()
     conn.close()
-    return [u[0] for u in users]
+    return users
 
 def add_admin(user_id):
     conn = sqlite3.connect(DB_NAME)
