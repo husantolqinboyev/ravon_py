@@ -31,6 +31,8 @@ def text_to_speech(text, lang='en'):
             # Fayl mavjudligini tekshirish
             if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
                 print(f"TTS: Success - file size: {os.path.getsize(file_path)} bytes")
+                # TTS statistikasini oshirish
+                db.increment_api_stats("tts")
                 return file_path
             else:
                 print("TTS: gTTS file not created or empty")
@@ -45,10 +47,6 @@ def text_to_speech(text, lang='en'):
     except Exception as e:
         print(f"TTS Error: {e}")
         return None
-
-    # TTS statistikasini oshirish (muvaffaqiyat bo'lsa)
-    if result:
-        db.increment_api_stats("tts")
 
 def test_tts():
     """TTS funksiyasini test qilish uchun"""
