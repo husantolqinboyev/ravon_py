@@ -102,7 +102,6 @@ from admin_panel import (
     set_user_limit_callback,
     edit_user_limit_callback,
     back_to_limits_callback,
-    handle_broadcast_text,
     show_top_results,
     refresh_api_stats,
 )
@@ -419,6 +418,134 @@ async def show_help(message: Message):
         "👥 **Referal tizimi:** Har bir taklif qilingan do'stingiz uchun +3 ta bepul test limiti beriladi."
     )
     await message.answer(help_text, parse_mode="Markdown")
+
+# Admin broadcast text handler - payment handler dan oldin
+@dp.message(F.text & ~F.text.startswith("/") & ~F.text.in_([
+    "🎤 Talaffuzni test qilish", "📝 So'z yozish", "📄 Matn yozing", 
+    "🎲 Tasodifiy so'z", "📖 Tasodifiy matn", "⬅️ Asosiy menyu", "🔊 Matnni audioga aylantirish",
+    "👥 Do'stlarni taklif qilish", "👤 Profil 👤", "📊 Statistika 📊", "ℹ️ Yordam ℹ️", "💎 Premium 💎",
+    "🛠 Admin Panel", "👨‍🏫 O'qituvchi Paneli", "📊 Umumiy statistika", "💳 To'lov so'rovlari", 
+    "💰 Tariflar boshqaruvi", "🧹 Tariflarni tozalash", "🗑️ Fayllarni tozalash", "👨‍🏫 O'qituvchi tayinlash", 
+    "📢 Xabar yuborish (Ad)", "👤 Foydalanuvchilar", "👨‍🎓 Mening o'quvchilarim", "👥 O'quvchi biriktirish", 
+    "📝 Material qo'shish", "🤖 AI yordam", "📚 Materiallarim", "📊 O'quvchilar statistikasi", 
+    "📤 Material yuborish", "📝 So'z qo'shish", "📄 Matn qo'shish", "🤖 AI so'z yaratish", "🤖 AI matn yaratish", 
+    "📝 So'z yuborish", "📄 Matn yuborish", "🤖 AI so'z yuborish", "🤖 AI matn yuborish", "📝 So'z yaratish (AI)", 
+    "📄 Matn yaratish (AI)", "📡 API Monitoring", "🗑️ Fayllarni tozalash", "🧹 Tariflarni tozalash"
+]))
+async def handle_broadcast_text_main(message: Message):
+    """Admin tomonidan yuborilgan matnli e'lonni barcha foydalanuvchilarga yuborish"""
+    if not db.is_admin(message.from_user.id):
+        return
+    
+    # Adminning oldingi xabarini tekshirish (broadcast boshlanganmi)
+    if message.reply_to_message and "📢 **E'lon yuborish**" in message.reply_to_message.text:
+        broadcast_text = message.text
+        from admin_panel import send_broadcast_to_all_users
+        await send_broadcast_to_all_users(broadcast_text)
+        await message.answer("✅ Matnli e'lon barcha foydalanuvchilarga muvaffaqiyatli yuborildi!")
+    else:
+        # Agar bu broadcast bo'lmasa, normal admin xabi sifatida qayta ishlash
+        pass
+
+# Admin broadcast photo handler
+@dp.message(F.photo)
+async def handle_broadcast_photo_main(message: Message):
+    """Admin tomonidan yuborilgan rasmni barcha foydalanuvchilarga yuborish"""
+    if not db.is_admin(message.from_user.id):
+        return
+    
+    # Adminning oldingi xabarini tekshirish
+    if message.reply_to_message and "📢 **E'lon yuborish**" in message.reply_to_message.text:
+        # Rasm va izoh birga yuborilgan
+        caption = message.caption or ""
+        
+        if len(caption) > 1000:
+            await message.answer("❌ Izoh 1000 ta belgidan oshmasligi kerak!")
+            return
+        
+        # Rasmni saqlash
+        file = await bot.get_file(message.photo[-1].file_id)
+        file_path = f"broadcast_photo_{message.from_user.id}_{message.photo[-1].file_id}.jpg"
+        
+        # Faylni yuklab olish
+        file_content = await bot.download_file(file.file_path)
+        with open(file_path, 'wb') as f:
+            f.write(file_content.read())
+        
+        # To'g'ridan yuborish
+        from admin_panel import send_media_broadcast
+        state = {
+            'type': 'photo',
+            'file_path': file_path,
+            'file_id': message.photo[-1].file_id
+        }
+        
+        await send_media_broadcast(state, caption, message.from_user.id)
+        
+        # Tozalash
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        await message.answer(
+            f"📸 **Rasm e'loni yuborildi!**\n\n"
+            f"📝 Izoh: {caption[:100]}{'...' if len(caption) > 100 else ''}\n\n"
+            f"✅ Barcha foydalanuvchilarga yuborildi!",
+            parse_mode="Markdown"
+        )
+    else:
+        # Agar bu broadcast bo'lmasa, payment handler ga o'tkazish
+        await handle_payment_photo(message)
+
+# Admin broadcast video handler
+@dp.message(F.video)
+async def handle_broadcast_video_main(message: Message):
+    """Admin tomonidan yuborilgan videoni barcha foydalanuvchilarga yuborish"""
+    if not db.is_admin(message.from_user.id):
+        return
+    
+    # Adminning oldingi xabarini tekshirish
+    if message.reply_to_message and "📢 **E'lon yuborish**" in message.reply_to_message.text:
+        # Video va izoh birga yuborilgan
+        caption = message.caption or ""
+        
+        if len(caption) > 1000:
+            await message.answer("❌ Izoh 1000 ta belgidan oshmasligi kerak!")
+            return
+        
+        # Videoni saqlash
+        file = await bot.get_file(message.video.file_id)
+        file_path = f"broadcast_video_{message.from_user.id}_{message.video.file_id}.mp4"
+        
+        # Faylni yuklab olish
+        file_content = await bot.download_file(file.file_path)
+        with open(file_path, 'wb') as f:
+            f.write(file_content.read())
+        
+        # To'g'ridan yuborish
+        from admin_panel import send_media_broadcast
+        state = {
+            'type': 'video',
+            'file_path': file_path,
+            'file_id': message.video.file_id,
+            'duration': message.video.duration
+        }
+        
+        await send_media_broadcast(state, caption, message.from_user.id)
+        
+        # Tozalash
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        await message.answer(
+            f"🎥 **Video e'loni yuborildi!**\n\n"
+            f"📊 Davomiyligi: {message.video.duration} soniya\n"
+            f"📝 Izoh: {caption[:100]}{'...' if len(caption) > 100 else ''}\n\n"
+            f"✅ Barcha foydalanuvchilarga yuborildi!",
+            parse_mode="Markdown"
+        )
+    else:
+        # Agar bu broadcast bo'lmasa, normal admin xabi sifatida qayta ishlash
+        pass
 
 @dp.message(F.photo)
 async def handle_payment_photo(message: Message):
