@@ -696,6 +696,25 @@ async def handle_broadcast_video(message: Message):
 # Global state for broadcast
 broadcast_states = {}
 
+@admin_router.message(F.text & ~F.text.startswith("/") & ~F.text.in_([
+    "📊 Umumiy statistika", "💳 To'lov so'rovlari", "💰 Tariflar boshqaruvi",
+    "🔢 Limitlarni boshqarish", "🧹 Tariflarni tozalash", "🗑️ Fayllarni tozalash", 
+    "👨‍🏫 O'qituvchi tayinlash", "📢 Xabar yuborish (Ad)", "👤 Foydalanuvchilar", "⬅️ Asosiy menyu"
+]))
+async def handle_broadcast_text(message: Message):
+    """Admin tomonidan yuborilgan matnli e'lonni barcha foydalanuvchilarga yuborish"""
+    if not db.is_admin(message.from_user.id):
+        return
+    
+    # Adminning oldingi xabarini tekshirish (broadcast boshlanganmi)
+    if message.reply_to_message and "📢 **E'lon yuborish**" in message.reply_to_message.text:
+        broadcast_text = message.text
+        await send_broadcast_to_all_users(broadcast_text)
+        await message.answer("✅ Matnli e'lon barcha foydalanuvchilarga muvaffaqiyatli yuborildi!")
+    else:
+        # Agar bu broadcast bo'lmasa, normal admin xabi sifatida qayta ishlash
+        pass
+
 async def send_media_broadcast(state, caption, admin_id):
     """Media bilan e'lon yuborish"""
     import database as db
