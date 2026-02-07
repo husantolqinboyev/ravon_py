@@ -103,6 +103,8 @@ from admin_panel import (
     edit_user_limit_callback,
     back_to_limits_callback,
     handle_broadcast_text,
+    show_top_results,
+    refresh_api_stats,
 )
 
 # Kanalga a'zolikni tekshirish funksiyasi
@@ -294,6 +296,12 @@ async def admin_menu_buttons(message: Message):
         await start_assign_teacher(message)
     elif text == "👥 Foydalanuvchilar":
         await show_users_list(message)
+    elif text == "📢 Xabar yuborish (Ad)":
+        from admin_panel import start_broadcast
+        await start_broadcast(message)
+    elif text == "📡 API Monitoring":
+        from admin_panel import show_api_monitoring
+        await show_api_monitoring(message)
 
 @dp.message(F.text == "👨‍🏫 O'qituvchi Paneli")
 async def teacher_panel_button(message: Message):

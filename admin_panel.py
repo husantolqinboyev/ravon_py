@@ -771,7 +771,7 @@ async def send_broadcast_to_all_users(text):
     
     return {"success": success_count, "errors": error_count}
 
-@admin_router.message(F.text == "� API Monitoring")
+@admin_router.message(F.text == "📡 API Monitoring")
 async def show_api_monitoring(message: Message):
     if db.is_admin(message.from_user.id):
         # API so'rovlari statistikasi
