@@ -20,8 +20,9 @@ def get_admin_menu():
         [KeyboardButton(text="💳 To'lov so'rovlari")],
         [KeyboardButton(text="💰 Tariflar boshqaruvi"), KeyboardButton(text="🔢 Limitlarni boshqarish")],
         [KeyboardButton(text="🧹 Tariflarni tozalash"), KeyboardButton(text="👨‍🏫 O'qituvchi tayinlash")],
-        [KeyboardButton(text="�️ Fayllarni tozalash"), KeyboardButton(text="� Xabar yuborish (Ad)")],
-        [KeyboardButton(text="👤 Foydalanuvchilar"), KeyboardButton(text="⬅️ Asosiy menyu")]
+        [KeyboardButton(text="🗑️ Fayllarni tozalash"), KeyboardButton(text="📢 Xabar yuborish (Ad)")],
+        [KeyboardButton(text="� API Monitoring"), KeyboardButton(text="� Foydalanuvchilar")],
+        [KeyboardButton(text="⬅️ Asosiy menyu")]
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
@@ -769,7 +770,93 @@ async def send_broadcast_to_all_users(text):
     
     return {"success": success_count, "errors": error_count}
 
-@admin_router.message(F.text == "👤 Foydalanuvchilar")
+@admin_router.message(F.text == "🔍 API Monitoring")
+async def show_api_monitoring(message: Message):
+    if db.is_admin(message.from_user.id):
+        # API so'rovlari statistikasi
+        text = (
+            "🔍 **API Monitoring**\n\n"
+            "📊 **Jami so'rovlar:**\n"
+            f"├ STT (Speech-to-Text): {getattr(db, 'stt_requests', 0)} ta\n"
+            f"├ TTS (Text-to-Speech): {getattr(db, 'tts_requests', 0)} ta\n"
+            f"├ AI Analysis: {getattr(db, 'ai_requests', 0)} ta\n"
+            f"└ Jami: {getattr(db, 'total_requests', 0)} ta\n\n"
+            "📈 **Kunlik statistika:**\n"
+            f"├ Bugun: {getattr(db, 'today_requests', 0)} ta\n"
+            f"├ O'tgan kun: {getattr(db, 'yesterday_requests', 0)} ta\n"
+            f"└ O'rtacha: {getattr(db, 'avg_requests', 0)} ta/kun\n\n"
+        )
+        
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📊 Natijalar", callback_data="show_top_results")],
+            [InlineKeyboardButton(text="� Yangilash", callback_data="refresh_api_stats")],
+            [InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_admin")]
+        ])
+        
+        await message.answer(text, reply_markup=markup, parse_mode="Markdown")
+
+@admin_router.callback_query(F.data == "show_top_results")
+async def show_top_results(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        # Oxirgi 20 ta foydalanuvchi va ularning ballari
+        conn = db.sqlite3.connect(db.DB_NAME)
+        cursor = conn.cursor()
+        
+        # Oxirgi test natijalarini olish
+        cursor.execute("""
+            SELECT u.full_name, u.username, t.pronunciation_score, t.accuracy_score, t.fluency_score, t.test_date
+            FROM users u
+            LEFT JOIN test_results t ON u.user_id = t.user_id
+            WHERE t.pronunciation_score IS NOT NULL
+            ORDER BY t.test_date DESC
+            LIMIT 20
+        """)
+        
+        results = cursor.fetchall()
+        conn.close()
+        
+        if not results:
+            await callback.message.answer("📊 **Natijalar topilmadi**\n\nHozircha hech kim test topshirmagan.")
+            await callback.answer()
+            return
+        
+        text = "📊 **Oxirgi 20 ta natija**\n\n"
+        
+        for i, result in enumerate(results, 1):
+            full_name = result[0] or "Ism yo'q"
+            username = f"@{result[1]}" if result[1] else "username yo'q"
+            pron_score = result[2] or 0
+            acc_score = result[3] or 0
+            flu_score = result[4] or 0
+            test_date = result[5] or "Noma'lum"
+            
+            # Umumiy ball
+            total_score = (pron_score + acc_score + flu_score) / 3
+            
+            text += (
+                f"{i:2d}. **{full_name}**\n"
+                f"    👤 {username}\n"
+                f"    🎯 Umumiy: {total_score:.1f}/100\n"
+                f"    🗣 Talaffuz: {pron_score}/100\n"
+                f"    📝 Aniqlik: {acc_score}/100\n"
+                f"    🗣 Ravonlik: {flu_score}/100\n"
+                f"    📅 Sana: {test_date}\n\n"
+            )
+        
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="🔄 Yangilash", callback_data="show_top_results")],
+            [InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_admin")]
+        ])
+        
+        await callback.message.answer(text, reply_markup=markup, parse_mode="Markdown")
+        await callback.answer()
+
+@admin_router.callback_query(F.data == "refresh_api_stats")
+async def refresh_api_stats(callback: CallbackQuery):
+    if db.is_admin(callback.from_user.id):
+        # Statistikani yangilash
+        await show_api_monitoring(callback.message)
+        await callback.answer("🔄 Statistika yangilandi!")
 async def show_users_list(message: Message):
     if db.is_admin(message.from_user.id):
         users = db.get_all_users()
