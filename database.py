@@ -516,6 +516,43 @@ def get_all_users():
     conn.close()
     return users
 
+# API statistikasi uchun global o'zgaruvchilar
+stt_requests = 0
+tts_requests = 0
+ai_requests = 0
+total_requests = 0
+today_requests = 0
+yesterday_requests = 0
+avg_requests = 0
+
+def increment_api_stats(api_type):
+    """API so'rovi statistikasini oshirish"""
+    global stt_requests, tts_requests, ai_requests, total_requests, today_requests
+    
+    if api_type == "stt":
+        stt_requests += 1
+    elif api_type == "tts":
+        tts_requests += 1
+    elif api_type == "ai":
+        ai_requests += 1
+    
+    total_requests += 1
+    today_requests += 1
+
+def get_api_stats():
+    """API statistikasini olish"""
+    global stt_requests, tts_requests, ai_requests, total_requests, today_requests, yesterday_requests, avg_requests
+    
+    return {
+        "stt_requests": stt_requests,
+        "tts_requests": tts_requests,
+        "ai_requests": ai_requests,
+        "total_requests": total_requests,
+        "today_requests": today_requests,
+        "yesterday_requests": yesterday_requests,
+        "avg_requests": avg_requests
+    }
+
 def add_admin(user_id):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()

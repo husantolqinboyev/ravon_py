@@ -774,22 +774,24 @@ async def send_broadcast_to_all_users(text):
 async def show_api_monitoring(message: Message):
     if db.is_admin(message.from_user.id):
         # API so'rovlari statistikasi
+        stats = db.get_api_stats()
+        
         text = (
             "🔍 **API Monitoring**\n\n"
             "📊 **Jami so'rovlar:**\n"
-            f"├ STT (Speech-to-Text): {getattr(db, 'stt_requests', 0)} ta\n"
-            f"├ TTS (Text-to-Speech): {getattr(db, 'tts_requests', 0)} ta\n"
-            f"├ AI Analysis: {getattr(db, 'ai_requests', 0)} ta\n"
-            f"└ Jami: {getattr(db, 'total_requests', 0)} ta\n\n"
+            f"├ STT (Speech-to-Text): {stats['stt_requests']} ta\n"
+            f"├ TTS (Text-to-Speech): {stats['tts_requests']} ta\n"
+            f"├ AI Analysis: {stats['ai_requests']} ta\n"
+            f"└ Jami: {stats['total_requests']} ta\n\n"
             "📈 **Kunlik statistika:**\n"
-            f"├ Bugun: {getattr(db, 'today_requests', 0)} ta\n"
-            f"├ O'tgan kun: {getattr(db, 'yesterday_requests', 0)} ta\n"
-            f"└ O'rtacha: {getattr(db, 'avg_requests', 0)} ta/kun\n\n"
+            f"├ Bugun: {stats['today_requests']} ta\n"
+            f"├ O'tgan kun: {stats['yesterday_requests']} ta\n"
+            f"└ O'rtacha: {stats['avg_requests']} ta/kun\n\n"
         )
         
         markup = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📊 Natijalar", callback_data="show_top_results")],
-            [InlineKeyboardButton(text="� Yangilash", callback_data="refresh_api_stats")],
+            [InlineKeyboardButton(text="🔄 Yangilash", callback_data="refresh_api_stats")],
             [InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_admin")]
         ])
         

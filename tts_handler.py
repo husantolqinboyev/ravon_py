@@ -2,6 +2,7 @@ from gtts import gTTS
 import os
 import tempfile
 import uuid
+import database as db
 
 def text_to_speech(text, lang='en'):
     """
@@ -44,6 +45,10 @@ def text_to_speech(text, lang='en'):
     except Exception as e:
         print(f"TTS Error: {e}")
         return None
+
+    # TTS statistikasini oshirish (muvaffaqiyat bo'lsa)
+    if result:
+        db.increment_api_stats("tts")
 
 def test_tts():
     """TTS funksiyasini test qilish uchun"""

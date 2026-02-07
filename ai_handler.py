@@ -3,6 +3,7 @@ import json
 import time
 import base64
 from config import OPENROUTER_API_KEY, OPENROUTER_URL, MODEL_NAME
+import database as db
 
 # Import Vosk handler for offline STT
 try:
@@ -30,6 +31,8 @@ def transcribe_audio_with_gemini(audio_file_path):
         
         if transcribed_text:
             print(f"STT: Vosk transcribed: '{transcribed_text}'")
+            # STT statistikasini oshirish
+            db.increment_api_stats("stt")
             return transcribed_text
         else:
             print("STT: Vosk transcription failed")
@@ -113,6 +116,9 @@ def analyze_pronunciation(transcribed_text, original_text=None):
             content = content.replace("■", "").strip()
             if "```json" in content:
                 content = content.split("```json")[1].split("```")[0].strip()
+            
+            # AI statistikasini oshirish
+            db.increment_api_stats("ai")
             return json.loads(content)
         except Exception as e:
             print(f"AI Pronunciation Error (attempt {attempt + 1}): {e}")
