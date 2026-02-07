@@ -21,7 +21,7 @@ def get_admin_menu():
         [KeyboardButton(text="💰 Tariflar boshqaruvi"), KeyboardButton(text="🔢 Limitlarni boshqarish")],
         [KeyboardButton(text="🧹 Tariflarni tozalash"), KeyboardButton(text="👨‍🏫 O'qituvchi tayinlash")],
         [KeyboardButton(text="🗑️ Fayllarni tozalash"), KeyboardButton(text="📢 Xabar yuborish (Ad)")],
-        [KeyboardButton(text="� API Monitoring"), KeyboardButton(text="� Foydalanuvchilar")],
+        [KeyboardButton(text="📡 API Monitoring"), KeyboardButton(text="👥 Foydalanuvchilar")],
         [KeyboardButton(text="⬅️ Asosiy menyu")]
     ]
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
@@ -770,7 +770,7 @@ async def send_broadcast_to_all_users(text):
     
     return {"success": success_count, "errors": error_count}
 
-@admin_router.message(F.text == "🔍 API Monitoring")
+@admin_router.message(F.text == "� API Monitoring")
 async def show_api_monitoring(message: Message):
     if db.is_admin(message.from_user.id):
         # API so'rovlari statistikasi
@@ -1126,6 +1126,36 @@ async def handle_tariff_callbacks(callback: types.CallbackQuery):
         print(f"DEBUG: Error in {callback.data}: {str(e)}")
         await callback.message.edit_text(f"❌ **Xatolik:** {str(e)}")
         await callback.answer()
+
+@admin_router.message(F.text == "👥 Foydalanuvchilar")
+async def show_users_list(message: Message):
+    if db.is_admin(message.from_user.id):
+        users = db.get_all_users()
+        
+        if not users:
+            await message.answer("❌ Hech qanday foydalanuvchi topilmadi!")
+            return
+        
+        text = f"👥 **Barcha foydalanuvchilar (Jami: {len(users)} ta)**\n\n"
+        
+        # Foydalanuvchilar ro'yxatini ko'rsatish
+        for i, user in enumerate(users[:20], 1):  # Birinchi 20 ta foydalanuvchi
+            user_id, full_name, username = user
+            username_display = f"@{username}" if username else "username yo'q"
+            
+            # Foydalanuvchi statusini tekshirish
+            is_premium = db.get_user(user_id)[5] if db.get_user(user_id) else False
+            status = "💎 Premium" if is_premium else "👤 Oddiy"
+            
+            text += f"{i}. **{full_name}**\n"
+            text += f"   🆔 `{user_id}`\n"
+            text += f"   👤 {username_display}\n"
+            text += f"   🌟 {status}\n\n"
+        
+        if len(users) > 20:
+            text += f"... va yana {len(users) - 20} ta foydalanuvchi"
+        
+        await message.answer(text, parse_mode="Markdown")
 
 @admin_router.message(F.text == "⬅️ Asosiy menyu")
 async def back_to_main(message: Message):
