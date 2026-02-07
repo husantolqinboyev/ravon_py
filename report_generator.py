@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from fpdf import FPDF
 import os
 import qrcode

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from aiogram import Router, F, types
 from aiogram.filters import Command
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton

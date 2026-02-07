@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.colors import Color, HexColor, black, white
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle

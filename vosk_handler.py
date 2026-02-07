@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Vosk Speech-to-Text handler for offline English transcription
 """

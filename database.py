@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sqlite3
 import datetime
 from config import DB_NAME, ADMIN_IDS, TEACHER_IDS
